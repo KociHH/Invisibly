@@ -13,6 +13,10 @@ form.addEventListener('submit', async (e) => {
         body: JSON.stringify({name, username, password}),
     });
     const data = await response.json();
-    alert(data.msg);
+    if (data.success) {
+        window.location.href = `/home/${data.user_id}`;
+    } else {
+        alert(data.msg);
+    }
 });
 })();
