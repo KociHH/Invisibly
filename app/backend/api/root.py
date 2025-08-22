@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 import logging
-from app.utils import PSWD_context, path_html, GetUserInfo
+from app.backend.utils.user import PSWD_context, path_html, GetUserInfo
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

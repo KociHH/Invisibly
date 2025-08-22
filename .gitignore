@@ -19,3 +19,5 @@ coverage/
 .ipynb_checkpoints/
 .env
 .env.*
+*.session
+test.py

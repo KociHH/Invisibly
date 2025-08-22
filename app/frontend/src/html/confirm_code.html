@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подтверждение кода</title>
+</head>
+<body>
+    <div class="container">
+        <h4>Введите ниже код, который был отправлен вам на почту {{email}}:</h4>
+        <form id="verification-form">
+            <input id="code" type="text" placeholder="Введите код подтверждения" required maxlength="6" pattern="[0-9]{6}">
+            <input type="hidden" id="verification_token" value="{{verification_token}}">
+            <input type="hidden" id="exp_token" value="{{exp_token}}">
+            <input type="hidden" id="exp_repeated_code" value="{{exp_repeated_code}}">
+            <button type="submit">Подтвердить</button>
+        </form>
+        <div id="life_time_code">
+            <h6>Текущий код будет действителен еще: {{life_time}}:00</h6>
+        </div>
+        <div id="repeated_code">
+            <h5>Можно отправить повторно через: {{life_time_repeated_code}}:00</h5>
+        </div>
+        <div id="message"></div>
+    </div>
+    <script src="/static/confirm_code.js"></script>
+</body>
+</html>

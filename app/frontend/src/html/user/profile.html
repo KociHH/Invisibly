@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль</title>
+</head>
+<body>
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1>Ваш профиль</h1>
+            <h2>Основная информация</h2>
+            <div class="profile-info">
+                <div class="profile-info-public">
+                    <div class="name-block">
+                        <h3>{{user_name}}</h3>
+                    </div>
+                    <div class="login-block">
+                        <h3>{{user_login}}</h3>
+                    </div>
+                    <div class="bio-block">
+                        {{bio_content}}
+                    </div>
+                </div>
+            </div>
+            <a href="/edit_profile">Ред. профиль</a>
+        </div>
+    </div>
+    <a href="/profile">Вы</a> <a href="/chats">Чаты</a> <a href="/friends">Друзья</a>
+    <script src="/static/user/profile.js"></script>
+</body>
+</html>
