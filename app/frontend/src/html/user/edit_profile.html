@@ -6,31 +6,37 @@
     <title>Редактирование профиля</title>
 </head>
 <body>
-    <div class="profile-container">
-        <div class="profile-header">
+    <div class="profile_container">
+        <div class="profile_header">
             <h1>Ваш профиль</h1>
             <h2>Основная информация</h2>
-            <div class="profile-info">
-                <div class="profile-info-public">
-                    <label for="user_name">Имя пользователя:</label>
-                    <input type="text" id="user_name" value="{{user_name}}"><br>
-                    <label for="user_surname">Фамилия пользователя:</label>
-                    <input type="text" id="user_surname" value="{{user_surname}}"><br>
-                    <label for="user_login">Логин пользователя:</label>
-                    <input type="text" id="user_login" value="{{user_login}}"><br>
-                    <label for="user_email">Электронная почта:</label>
-                    <input type="email" id="user_email" value="{{user_email}}"><br>
-                    <label for="user_bio">Информация о себе:</label>
-                    <textarea id="user_bio">{{user_bio}}</textarea><br>
+        </div>
+        <div class="profile_info">
+            <div class="profile_info_public">
+                <div id="user_name">
+                    <label for="name">Имя:</label>
+                    <input type="text" id="name" value="{{name}}"><br>
+                </div>
+                <div id="user_surname">
+                    <label for="surname">Фамилия:</label>
+                    <input type="text" id="surname" value="{{surname}}"><br>
+                </div>
+                <div id="user_login">
+                    <label for="login">Логин:</label>
+                    <input type="text" id="login" value="{{login}}"><br>
+                </div>
+                <div id="user_bio_content">
+                    <label for="bio_content">Био:</label>
+                    <textarea id="bio_content">{{bio_content}}</textarea><br>
                 </div>
             </div>
-            <div class="modified">
-                <button>Сохранить</button>
-                <button>Отменить изменения</button>
-            </div>
+        </div>
+        <div class="modified">
+            <button id="submit">Сохранить</button>
+            <button id="cancel">Отменить изменения</button>
         </div>
     </div>
     <a href="/profile">Вы</a> <a href="/chats">Чаты</a> <a href="/friends">Друзья</a>
-    <script src="/static/user/profile.js"></script>
+    <script src="/static/user/edit_profile.js"></script>
 </body>
 </html>

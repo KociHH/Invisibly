@@ -21,9 +21,13 @@ class RefreshTokenRequest(BaseModel):
 class UserEditProfileNew(BaseModel):
     user_id: str | int
     name: str
+    surname: str
     login: str
     email: EmailStr
     bio: str
+
+class UserProfile(BaseModel):
+    user_id: str | int
 
 class SettingsExit(BaseModel):
     user_id: str | int

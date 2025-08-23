@@ -20,7 +20,7 @@ async def user_settings(user_info: UserInfo = Depends(template_not_found_user)):
 
     user_id = user_info.user_id
     rj = RedisJsons(user_id, "UserRegistered")
-    obj: dict = rj.get_or_cache_user_info(user_info)
+    obj: dict = await rj.get_or_cache_user_info(user_info)
 
     html_content = html_content.replace("{{name}}", obj.get('name'))
     html_content = html_content.replace("{{surname}}", obj.get('surname'))
@@ -39,9 +39,3 @@ async def user_logout(
 
     return {"success": True}
 
-
-@router.post("/settings")
-async def user_settings_post(
-    user_info: UserInfo = Depends(template_not_found_user)
-    ):
-    return {}

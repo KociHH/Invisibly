@@ -117,3 +117,13 @@ async def short_settings_profile(
             raise HTTPException(status_code=500, detail="Server error")
         
         obj = new_data
+
+async def full_name_constructor(name: str, surname: str, if_isnone: str) -> str:
+    full_name = ""
+    if name:
+        full_name += name
+    if surname and name:
+        full_name += f" {surname}"
+    else:
+        full_name = surname if surname else if_isnone
+    return full_name

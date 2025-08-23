@@ -10,26 +10,24 @@
         <div class="profile-header">
             <h2>Ваш профиль</h2>
             <h3>Основная информация</h3>
-            <div class="profile-info">
-                <div class="profile-info-public">
-                    <div id="user_name">
-                        <h4>{{name}}</h4>
-                    </div>
-                    <div id="user_surname">
-                        <h4>{{surname}}</h4>
+            <div class="profile_info">
+                <div class="profile_info_public">
+                    <div id="user_full_name">
+                        <h4>{{full_name}}</h4>
                     </div>
                     <div id="user_login">
+                        <p>Логин</p>
                         <h4>{{login}}</h4>
                     </div>
                     <div id="user_bio">
-                        {{bio_content}}
+                        <p>Био:</p>
+                        <h4>{{bio_content}}</h4>
                     </div>
                 </div>
             </div>
-            <a href="/edit_profile">Ред. профиль</a>
+            <a href="/edit_profile">Редактировать</a>
         </div>
     </div>
-    <a href="/profile">Вы</a> <a href="/chats">Чаты</a> <a href="/friends">Друзья</a>
     <script src="/static/user/profile.js"></script>
 </body>
 </html>

@@ -102,14 +102,16 @@ class RedisJsons(GeneralInfo):
         __redis_save_jwt_token__.cached(data=redis_data, ex=None)
         return redis_data 
 
-    async def get_or_cache_user_info(self, user_info: UserInfo):
+    async def get_or_cache_user_info(self, user_info: UserInfo, return_items: list | None = None):
         """
         Берет данные из __redis_save_sql_call__, если нет self.name_key в redis то береться из базы UserRegistered
         
         user_info: класс UserInfo объект юзера
         """
-        
-        obj: dict = redis_return_data(items=["name", "login", "bio", "email"], key_data=self.name_key)
+        if return_items == None:
+            return_items = ["name", "surname", "login", "bio", "email"]
+
+        obj: dict = redis_return_data(items=return_items, key_data=self.name_key)
         if obj.get("redis") == "empty":
             user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
             new_data = self.save_sql_call(

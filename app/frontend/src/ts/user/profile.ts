@@ -1,35 +1,30 @@
 import { log_sending_to_page } from "../utils/other";
-import {securedApiCall} from "../utils/secured";
+import { checkUpdateTokens } from "../utils/secured";
 
-async function loadUserProfile() {
-    try {
-        const response = await securedApiCall('/profile', {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json',
-            }
+async function loadUserBio() {
+    const bioContentElement = document.querySelector('#user_bio');
+    
+    if (bioContentElement) {
+        const bio = bioContentElement.getElementsByTagName('h4')[0];
 
-        });
-        if (response && response.ok) {
-            const data = await response.json();
-            console.log('Данные профиля:\n', data);
-
-            const bioContentElement = document.querySelector('.bio-block');
-            if (bioContentElement) {
-                const bio = data.user_info.bio ? String(data.user_info.bio).trim() : '';
-                if (bio) {
-                    bioContentElement.innerHTML = `<h3>${bio}</h3><h4>О себе</h4>`;
-                } else {
-                    bioContentElement.innerHTML = `<a href="/edit_profile">Добавить био</a>`;
-                }
-            }
-
+        if (bio && bio.textContent !== null && bio.textContent.trim() !== "") {
+            bioContentElement.innerHTML = `
+            <p>Био:</p>
+            <h4>${bio.textContent}</h4>
+            `;
         } else {
-            log_sending_to_page('Не удалось загрузить данные профиля.', 'error');
+            bioContentElement.innerHTML = `<a href="/edit_profile">Добавить био</a>`;
         }
-    } catch (error) {
-        log_sending_to_page(`Ошибка при запросе данных профиля: ${error}`, 'error');
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadUserProfile);
+document.addEventListener('DOMContentLoaded', async () => {
+    const data = await checkUpdateTokens();
+
+    if (!data || !data.success) {
+        log_sending_to_page(`Не вернулось значение функции checkUpdateTokens: ${data}`, "error");
+        return;
+    }
+
+    await loadUserBio();
+});
