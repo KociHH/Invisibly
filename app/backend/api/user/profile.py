@@ -23,24 +23,8 @@ async def user_profile(user_info: UserInfo = Depends(template_not_found_user)):
         html_content = f.read()
     
     user_id = user_info.user_id
-    rj = RedisJsons(user_id, "profile")
-    obj: dict = redis_return_data(items=["name", "login", "bio"], key_data=rj.name_key)
-    
-    if obj.get("redis") == "empty":
-        info: dict[str, Any] = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
-        bio_content = info.get("bio", "").strip()
-        new_data = rj.save_sql_call("profile", {
-            "user_id": info.get("user_id"),
-            "name": info.get("name"),
-            "login": info.get("login"),
-            "email": info.get("email"),
-            "bio": bio_content,
-        })
-        if not new_data:
-            logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
-            raise HTTPException(status_code=500, detail="Server error")
-        
-        obj = new_data
+    rj = RedisJsons(user_id, "UserRegistered")
+    obj: dict = rj.get_or_cache_user_info(user_info)
 
     html_content = html_content.replace("{{user_name}}", obj.get("name", "N/A"))
     html_content = html_content.replace("{{user_login}}", obj.get("login", "N/A"))
@@ -60,63 +44,49 @@ async def user_edit_profile(user_info: UserInfo = Depends(template_not_found_use
         html_content = f.read()
     
     user_id = user_info.user_id
-    k = f"{user_id}-edit_profile"
+    rj = RedisJsons(user_id, "UserRegistered")
+    obj: dict = rj.get_or_cache_user_info(user_info)
 
-    obj: dict = redis_return_data(items=["name", "login", "bio", "email"], key_data=k)
-    if obj.get("redis") == "empty":
-        info: dict[str, Any] = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
-        rj = RedisJsons(user_id, "edit_profile")
-        new_data = rj.save_sql_call("edit_profile", {
-            "name": info.get("name"),
-            "login": info.get("login"),
-            "bio": info.get("bio"),
-            "email": info.get("email"),
-        })
-        if not new_data:
-            logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
-            raise HTTPException(status_code=500, detail="Server error")
-        
-        obj = new_data
-
-    html_content = html_content.replace("{{user_bio}}", obj.get("bio", ""))
-    html_content = html_content.replace("{{user_name}}", obj.get("name", "N/A"))
-    html_content = html_content.replace("{{user_login}}", obj.get("login", "N/A"))
-    html_content = html_content.replace("{{user_email}}", obj.get("email", "N/A"))
+    html_content = html_content.replace("{{name}}", obj.get("name", "N/A"))
+    html_content = html_content.replace("{{login}}", obj.get("login", "N/A"))
+    html_content = html_content.replace("{{surname}}", obj.get("surname", ""))
+    html_content = html_content.replace("{{bio}}", obj.get("bio", ""))
 
     return HTMLResponse(content=html_content)
 
 @router.post("/edit_profile", response_model=SuccessMessageAnswer)
-async def user_edit_profile_post(user: UserEditProfileNew, db_session: AsyncSession = Depends(get_db_session)):
+async def user_edit_profile_post(
+    user: UserEditProfileNew, 
+    user_info: UserInfo = await template_not_found_user()
+    ):
     user_id = user.user_id
+
+    if user_id != user_info.user_id:
+        raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
+
     modified_data = {
         "name": user.name,
         "login": user.login,
         "email": user.email,
         "bio": user.bio
     }
-    rj = RedisJsons(user_id, "edit_profile")
+    rj = RedisJsons(user_id, "UserRegistered")
     obj: dict = redis_return_data(items=list(modified_data.keys()), key_data=rj.name_key)
 
     if not obj or obj.get("redis") == "empty":
-        user_info: UserInfo = await template_not_found_user()
         user_data = user_info.get_user_info(w_pswd=False, w_email_hash=False)
-        old_data = {
-            "name": user_data.get("name"),
-            "login": user_data.get("login"),
-            "email": user_data.get("email"),
-            "bio": user_data.get("bio")
-        }
-    else:
-        old_data = {
-            "name": obj.get("name"),
-            "login": obj.get("login"),
-            "email": obj.get("email"),
-            "bio": obj.get("bio")
-        }
+        obj = user_data
+
+    now_data = {
+        "name": obj.get("name"),
+        "login": obj.get("login"),
+        "email": obj.get("email"),
+        "bio": obj.get("bio")
+    }
 
     update_data = {}
     for field, modified_val in modified_data.items():
-        old_val = old_data.get(field)
+        old_val = now_data.get(field)
         if modified_val != old_val:
             update_data[field] = modified_val
 
@@ -124,7 +94,7 @@ async def user_edit_profile_post(user: UserEditProfileNew, db_session: AsyncSess
     success = False
 
     if update_data:
-        userb = BaseDAO(UserRegistered, db_session)
+        userb = BaseDAO(UserRegistered, user_info.db_session)
         updated = await userb.update(
             where=UserRegistered.user_id == user_id,
             data=update_data
@@ -136,7 +106,6 @@ async def user_edit_profile_post(user: UserEditProfileNew, db_session: AsyncSess
             success = True
 
             saved_data = rj.save_sql_call(
-                call="edit_profile",
                 data=modified_data
             )
             if not saved_data:

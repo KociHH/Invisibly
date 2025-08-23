@@ -1,23 +1,47 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 import logging
+from app.backend.data.pydantic import SettingsExit
+from app.backend.data.redis.utils import RedisJsons, redis_return_data
 from app.backend.utils.user import path_html, UserInfo
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import Depends
 from app.backend.data.sql.tables import get_db_session, UserRegistered
-from kos_Htools.sql.sql_alchemy import BaseDAO
 from app.backend.utils.dependencies import template_not_found_user
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/settings", response_class=HTMLResponse)
-async def user_settings():
+async def user_settings(user_info: UserInfo = Depends(template_not_found_user)):
     with open(path_html + "user/settings.html", "r", encoding="utf-8") as f:
         html_content = f.read()
+
+    user_id = user_info.user_id
+    rj = RedisJsons(user_id, "UserRegistered")
+    obj: dict = rj.get_or_cache_user_info(user_info)
+
+    html_content = html_content.replace("{{name}}", obj.get('name'))
+    html_content = html_content.replace("{{surname}}", obj.get('surname'))
+    html_content = html_content.replace("{{login}}", obj.get('login'))
+    html_content = html_content.replace("{{bio_content}}", obj.get('bio'))
+
     return HTMLResponse(content=html_content)
 
+@router.post("/logout")
+async def user_logout(
+    se: SettingsExit,
+    user_info: UserInfo = Depends(template_not_found_user)
+    ):
+    if se.user_id != user_info.user_id:
+        raise HTTPException(status_code=403, detail="Access denied: you can only logout from your own account")
+
+    return {"success": True}
+
+
 @router.post("/settings")
-async def user_settings_post():
+async def user_settings_post(
+    user_info: UserInfo = Depends(template_not_found_user)
+    ):
     return {}

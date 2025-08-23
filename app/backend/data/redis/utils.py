@@ -1,6 +1,32 @@
 from datetime import timedelta
 from app.backend.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
 from app.backend.utils.dependencies import curretly_msk
+import logging
+from app.backend.utils.user import UserInfo
+from fastapi import  HTTPException
+
+logger = logging.getLogger(__name__)
+
+def redis_return_data(
+        items: list[str],
+        key_data: str,
+        ) -> dict:
+    """
+    Использует __redis_save_sql_call__
+
+    items: [id, name, ...]
+    key_data: user_id-edit_profile и тд
+    """
+
+    base_data: dict | None = __redis_save_sql_call__.get_cached()
+    if not key_data in base_data.keys() or not base_data:
+        return {"redis": "empty"}
+
+    new_data = {}
+    for i in items:
+        new_data[i] = base_data[key_data].get(i)
+    return new_data
+
 
 class GeneralInfo:
     def __init__(self, user_id: int | str) -> None:
@@ -27,12 +53,12 @@ class GeneralInfo:
         return {"data": "updated"}
 
 class RedisJsons(GeneralInfo):
-    def __init__(self, user_id: int | str, call: str) -> None:
-        self.call = call
-        self.name_key = f"{self.user_id}-{self.call}"
+    def __init__(self, user_id: int | str, handle: str) -> None:
+        self.handle = handle
+        self.name_key = f"{self.user_id}-{self.handle}"
         super().__init__(user_id=user_id)
 
-    def save_sql_call(self, call: str, data: dict, exp: int = 300) -> dict:
+    def save_sql_call(self, data: dict, exp: int = 300) -> dict:
         """
         Можно сохранять либо обновлять в хранилище __redis_save_sql_call__
 
@@ -76,21 +102,28 @@ class RedisJsons(GeneralInfo):
         __redis_save_jwt_token__.cached(data=redis_data, ex=None)
         return redis_data 
 
+    async def get_or_cache_user_info(self, user_info: UserInfo):
+        """
+        Берет данные из __redis_save_sql_call__, если нет self.name_key в redis то береться из базы UserRegistered
+        
+        user_info: класс UserInfo объект юзера
+        """
+        
+        obj: dict = redis_return_data(items=["name", "login", "bio", "email"], key_data=self.name_key)
+        if obj.get("redis") == "empty":
+            user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
+            new_data = self.save_sql_call(
+                {
+                    "user_id": user.get("user_id"),
+                    "name": user.get("name"),
+                    "surname": user.get("surname"),
+                    "login": user.get("login"),
+                    "bio": user.get("bio"),
+                    "email": user.get("email"),
+                })
+            if not new_data:
+                logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
+                raise HTTPException(status_code=500, detail="Server error")
 
-def redis_return_data(
-        items: list[str],
-        key_data: str,
-        ) -> dict:
-    """
-    items: [id, name, ...]
-    key_data: user_id-edit_profile и тд
-    """
-
-    base_data: dict | None = __redis_save_sql_call__.get_cached()
-    if not key_data in base_data.keys() or not base_data:
-        return {"redis": "empty"}
-
-    new_data = {}
-    for i in items:
-        new_data[i] = base_data[key_data].get(i)
-    return new_data
+            obj = new_data
+        return obj

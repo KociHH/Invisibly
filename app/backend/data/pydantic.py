@@ -25,6 +25,9 @@ class UserEditProfileNew(BaseModel):
     email: EmailStr
     bio: str
 
+class SettingsExit(BaseModel):
+    user_id: str | int
+
 # security
 class NewEmail(BaseModel):
     user_id: int | str

@@ -8,17 +8,20 @@
 <body>
     <div class="profile-container">
         <div class="profile-header">
-            <h1>Ваш профиль</h1>
-            <h2>Основная информация</h2>
+            <h2>Ваш профиль</h2>
+            <h3>Основная информация</h3>
             <div class="profile-info">
                 <div class="profile-info-public">
-                    <div class="name-block">
-                        <h3>{{user_name}}</h3>
+                    <div id="user_name">
+                        <h4>{{name}}</h4>
                     </div>
-                    <div class="login-block">
-                        <h3>{{user_login}}</h3>
+                    <div id="user_surname">
+                        <h4>{{surname}}</h4>
                     </div>
-                    <div class="bio-block">
+                    <div id="user_login">
+                        <h4>{{login}}</h4>
+                    </div>
+                    <div id="user_bio">
                         {{bio_content}}
                     </div>
                 </div>

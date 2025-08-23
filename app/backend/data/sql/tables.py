@@ -17,6 +17,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 class UserRegistered(base):
     """
+    user_id: int
     password: str
     login: str
     name: str
@@ -34,10 +35,10 @@ class UserRegistered(base):
         Sequence('user_id', start=1000, increment=1),
         primary_key=True, 
         )
-    password = Column(String, nullable=False)
     login = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     surname = Column(String, nullable=True)
+    password = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
     email_hash = Column(String, nullable=False, unique=True)
     registration_date = Column(DateTime, nullable=False)

@@ -1,9 +1,14 @@
+from fastapi import HTTPException
+from fastapi.responses import HTMLResponse
 from app.backend.data.redis.instance import __redis_save_sql_call__
 import logging
 import smtplib
 from email.message import EmailMessage
 import random
-
+from fastapi import Depends
+from app.backend.data.redis.utils import RedisJsons, redis_return_data
+from app.backend.utils.dependencies import template_not_found_user
+from app.backend.utils.user import UserInfo, path_html
 from config.env import SMTP_EMAIL, SMTP_HOST, SMTP_PASS, SMTP_PORT
 
 logger = logging.getLogger(__name__)
@@ -89,3 +94,26 @@ def send_code_email(
         error_msg = f"Неожиданная ошибка: {str(e)}"
         logger.error(f"{error_msg} при отправке email на: {email_to}")
         return {"success": False, "error": error_msg}
+    
+async def short_settings_profile(
+        user_info: UserInfo,
+
+        ):
+    user_id = user_info.user_id
+    rj_edit = RedisJsons(user_id, "edit_profile")
+
+    obj: dict = redis_return_data(items=["name", "login", "bio", "email"], key_data=rj_edit.name_key)
+    if obj.get("redis") == "empty":
+        user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
+        new_data = rj_edit.save_sql_call("edit_profile", {
+            "name": user.get("name"),
+            "surname": user.get("surname"),
+            "login": user.get("login"),
+            "bio": user.get("bio"),
+            "email": user.get("email"),
+        })
+        if not new_data:
+            logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
+            raise HTTPException(status_code=500, detail="Server error")
+        
+        obj = new_data
