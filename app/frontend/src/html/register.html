@@ -7,14 +7,14 @@
 </head>
 <body>
     <form id="register-form">
-      <input id="name" type="text" placeholder="Имя пользователя" required>
-      <input id="login" type="text" placeholder="Логин" required>
-      <input id="email" type="email" placeholder="Почта" required>
-      <input id="password" type="password" placeholder="Пароль" required>
+      <input id="name" type="text" placeholder="Имя пользователя" required autocomplete="name">
+      <input id="login" type="text" placeholder="Логин" required autocomplete="username">
+      <input id="email" type="email" placeholder="Почта" required autocomplete="email">
+      <input id="password" type="password" placeholder="Пароль" required autocomplete="new-password">
       <button type="submit">Зарегистрироваться</button>
     </form>
     <h3>У вас уже есть аккаунт?</h3>
     <a href="/login">Войти</a>
-    <script src="/static/register.js"></script>
+    <script src="/static/register.js" type="module"></script>
 </body>
 </html>

@@ -28,7 +28,7 @@ async def user_settings(user_info: UserInfo = Depends(template_not_found_user)):
     html_content = html_content.replace("{{bio_content}}", obj.get('bio'))
 
     return HTMLResponse(content=html_content)
-
+    
 @router.post("/logout")
 async def user_logout(
     se: SettingsExit,

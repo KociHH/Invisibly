@@ -1,4 +1,4 @@
-import { log_sending_to_page } from "../utils/other";
+import { log_sending_to_page } from "../utils/other.js";
 import { checkUpdateTokens, securedApiCall } from "../utils/secured";
 
 class Buttons {

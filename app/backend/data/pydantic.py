@@ -6,7 +6,7 @@ class UserRegister(BaseModel):
     login: str
     password: str
     email: EmailStr
-    register: bool
+    is_registered: bool
 
 class UserLogin(BaseModel):
     login: str
@@ -58,7 +58,6 @@ class SendCode(BaseModel):
     code: str
     token: str
 
-
 # confirm_password
 class SendPassword(BaseModel):
     password: str
@@ -72,6 +71,14 @@ class SuccessMessageAnswer(BaseModel):
     success: bool
     message: str
 
-class WithoutExtraInfo(BaseModel):
-    i: None = None
+class AuthResponse(BaseModel):
+    success: bool
+    message: str
+    access_token: str | None = None
+    refresh_token: str | None = None
+
+class EventTokensResponse(BaseModel):
+    access_token: str | None
+    refresh_token: str | None
+    token_type: str | None
 

@@ -4,14 +4,14 @@ result_serializer = 'json'
 timezone = 'Europe/Moscow'
 enable_utc = True
 
-# celery -A app.data.celery.app worker -l info -P solo
-# celery -A app.data.celery.app beat -l info
+# celery -A app.backend.celery.app worker -l info -P solo
+# celery -A app.backend.celery.app beat -l info
 
 worker_prefetch_multiplier = 1
 worker_max_tasks_per_child = 1000
 worker_max_memory_per_child = 150000
 
-path_tasks = 'app.data.celery.tasks'
+path_tasks = 'app.backend.celery.tasks.'
 beat_schedule = {
     'check-jwt-token-date': {
         'task': path_tasks + 'check_jwt_token_date',

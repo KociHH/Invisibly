@@ -1,5 +1,5 @@
-import { log_sending_to_page, getUrlParams } from "../../utils/other";
-import { checkUpdateTokens, securedApiCall } from "../../utils/secured"
+import { log_sending_to_page, getUrlParams } from "../../utils/other.js";
+import { checkUpdateTokens, securedApiCall } from "../../utils/secured.js";
 
 class ChangedEmail {
     private async changedEmailForm(user_id: number | string) {

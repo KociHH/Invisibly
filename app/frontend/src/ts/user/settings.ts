@@ -1,5 +1,5 @@
-import { log_sending_to_page } from "../utils/other";
-import {checkUpdateTokens, clearTokensAndRedirectLogin, securedApiCall} from "../utils/secured";
+import { log_sending_to_page } from "../utils/other.js";
+import { checkUpdateTokens, securedApiCall, clearTokensAndRedirectLogin } from "../utils/secured";
 
 async function SettingsExit(user_id: number | string) {
     const button = document.getElementById("submit_exit") as HTMLButtonElement;

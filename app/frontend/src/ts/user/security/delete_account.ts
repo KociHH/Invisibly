@@ -1,5 +1,5 @@
-import { getUrlParams, log_sending_to_page } from "../../utils/other";
-import { checkUpdateTokens, securedApiCall } from "../../utils/secured";
+import { getUrlParams, log_sending_to_page } from "../../utils/other.js";
+import { checkUpdateTokens, securedApiCall } from "../../utils/secured.js";
 
 class DeleteAccount {
     private button: HTMLButtonElement | undefined = this.buttonObj();

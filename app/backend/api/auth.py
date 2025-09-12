@@ -1,5 +1,5 @@
 from datetime import timedelta
-from app.backend.data.pydantic import SuccessAnswer, UserRegister, UserLogin
+from app.backend.data.pydantic import SuccessAnswer, SuccessMessageAnswer, UserRegister, UserLogin
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.responses import HTMLResponse
 import logging
@@ -8,11 +8,12 @@ from kos_Htools.sql.sql_alchemy import BaseDAO
 from app.backend.data.sql.tables import UserRegistered, get_db_session
 from app.backend.data.sql.utils import CreateSql
 from app.backend.utils.user import PSWD_context, path_html, DBUtils, EncryptEmail
-from app.backend.utils.dependencies import curretly_msk
+from config.variables import curretly_msk
 from app.backend.jwt.token import create_token
 from pydantic import ValidationError
 import uuid
 from config.env import REFRESH_TOKEN_LIFETIME_DAYS
+from app.backend.data.pydantic import AuthResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -24,17 +25,17 @@ async def register_page():
         html_content = f.read()
     return HTMLResponse(content=html_content)
 
-@router.post("/register", response_model=SuccessAnswer)
+@router.post("/register", response_model=AuthResponse)
 async def register(user: UserRegister, db_session: AsyncSession = Depends(get_db_session)):
     registerb = BaseDAO(UserRegistered, db_session)
-    reg = await registerb.get_one(UserRegistered.login == user.login)
-    if reg:
-        return {"msg": "Пользователь с таким логином уже существует"}
+    db_login = await registerb.get_one(UserRegistered.login == "@" + user.login)
+    if db_login:
+        return {"success": False, "message": "Пользователь с таким логином уже существует"}
     
     dbu = DBUtils(db_session)
     db_email_hash, email_hash = await dbu.email_verification(user.email)
     if db_email_hash:
-        return {"msg": "Пользователь с таким email уже существует"}
+        return {"success": False, "message": "Пользователь с таким email уже существует"}
 
     password_hash = PSWD_context.hash(user.password)
     new_user = await registerb.create(data={
@@ -43,31 +44,40 @@ async def register(user: UserRegister, db_session: AsyncSession = Depends(get_db
         "name": user.name,
         "email": user.email,
         "email_hash": email_hash,
-        "registration_date": curretly_msk,
+        "registration_date": curretly_msk(),
     })
-    if user.register:
-        access_token, _ = create_token(data={"user_id": new_user.id}, token_type="access")
-        refresh_token, jti = create_token(data={"user_id": new_user.id}, token_type="refresh")
+    if user.is_registered:
+        access_token, _ = create_token(data={"user_id": new_user.user_id}, token_type="access")
+        refresh_token, jti = create_token(data={"user_id": new_user.user_id}, token_type="refresh")
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неверный запрос")
+    print(f"access_token: {access_token}\n refresh_token:{refresh_token}")
 
     # бд
-    issued_at = curretly_msk
-    expires_at = curretly_msk + timedelta(days=REFRESH_TOKEN_LIFETIME_DAYS)
+    expires_at = curretly_msk() + timedelta(days=REFRESH_TOKEN_LIFETIME_DAYS)
     create_sql = CreateSql(db_session)
     await create_sql.create_UJWT(save_elements={
-        "user_id": new_user.id,
+        "user_id": new_user.user_id,
         "jti": jti,
-        "issued_at": issued_at,
+        "issued_at": curretly_msk(),
         "expires_at": expires_at,
         "token_type": "refresh",
     })
 
+    logger.info(
+        "\nПользователь был зарегестрирован:\n"
+        f"user_id: {new_user.user_id}\n"
+        f"login: {user.login}\n"
+        f"name: {user.name}\n"
+        f"email: {user.email}\n"
+        f"registration_date: {curretly_msk()}\n\n"
+        )
     return {
         "success": True, 
+        "message": "Пользователь успешно зарегистрирован",
         "access_token": access_token, 
         "refresh_token": refresh_token, 
-        "user_id": new_user.id
+        "user_id": new_user.user_id
         }
 
 # login
@@ -77,35 +87,42 @@ async def login_page():
         html_content = f.read()
     return HTMLResponse(content=html_content)
     
-@router.post("/login", response_model=SuccessAnswer)
+@router.post("/login", response_model=AuthResponse)
 async def login(user: UserLogin, db_session: AsyncSession = Depends(get_db_session)):
     loginb = BaseDAO(UserRegistered, db_session)
-    log = await loginb.get_one(UserRegistered.login == user.login)
+    db_logging = await loginb.get_one(UserRegistered.login == "@" + user.login)
     
-    if not log:
-        return {"msg": "Неверный логин"}
+    if not db_logging:
+        return {"success": False, "message": "Неверный логин"}
     
     ee = EncryptEmail(user.email)
-    if log.email_hash != ee.hash_email() and not PSWD_context.verify(user.password, log.password):
-        return {"msg": "Неверный email или пароль"}
-    
-    access_token, _ = create_token(data={"user_id": log.id}, token_type="access")
-    refresh_token, jti = create_token(data={"user_id": log.id}, token_type="refresh")
-    
+    if db_logging.email_hash != ee.hash_email() or not PSWD_context.verify(user.password, db_logging.password):
+        return {"success": False, "message": "Неверный email или пароль"}
+
+    access_token, _ = create_token(data={"user_id": db_logging.user_id}, token_type="access")
+    refresh_token, jti = create_token(data={"user_id": db_logging.user_id}, token_type="refresh")
+
     # бд
-    issued_at = curretly_msk
-    expires_at = curretly_msk + timedelta(days=REFRESH_TOKEN_LIFETIME_DAYS)
+    issued_at = curretly_msk()
+    expires_at = curretly_msk() + timedelta(days=REFRESH_TOKEN_LIFETIME_DAYS)
     create_sql = CreateSql(db_session)
     await create_sql.create_UJWT(save_elements={
-        "user_id": log.id,
+        "user_id": db_logging.user_id,
         "jti": jti,
         "issued_at": issued_at,
         "expires_at": expires_at,
         "token_type": "refresh",
     })
 
+    logger.info(
+        "\nПользователь вошел в аккаунт:\n"
+        f"user_id: {db_logging.user_id}\n"
+        f"login: {db_logging.login}\n"
+        f"name: {db_logging.name}\n\n"
+    )
     return {
         "success": True, 
+        "message": "Успешный вход в систему",
         "access_token": access_token, 
         "refresh_token": refresh_token, 
         "token_type": "bearer"

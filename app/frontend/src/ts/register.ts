@@ -1,3 +1,7 @@
+import { log_sending_to_page } from "./utils/other.js";
+import { ACCESS_TOKEN_KEY, clearTokensAndRedirectLogin, REFRESH_TOKEN_KEY} from "./utils/secured.js";
+
+
 (() => {
 const form = document.getElementById('register-form') as HTMLFormElement;
 
@@ -16,17 +20,21 @@ form.addEventListener('submit', async (e) => {
             login, 
             password, 
             email, 
-            "register": true
+            "is_registered": true
         }),
     });
     const data = await response.json();
-    if (data.success) {
-        localStorage.setItem('accessToken', data.access_token);
-        localStorage.setItem('refreshToken', data.refresh_token);
-        
-        window.location.href = `/profile`;
+    if (response && response.ok) {
+        if (data.success) {
+            localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token);
+            localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token);
+            window.location.href = `/profile`;
+        } else {
+            alert(data.message);
+        }
     } else {
-        alert(data.msg);
+        log_sending_to_page('Не удалось зарегестрироваться', "error");
+        return;
     }
 });
 })();

@@ -11,16 +11,16 @@ from app.backend.data.sql.utils import CreateSql
 from kos_Htools.sql.sql_alchemy import BaseDAO
 from config.env import REFRESH_TOKEN_LIFETIME_DAYS
 from datetime import timedelta
-from app.backend.utils.dependencies import curretly_msk
+from config.variables import curretly_msk
 from jose import jwt, exceptions
 from app.backend.utils.dependencies import template_not_found_user
-from app.backend.data.pydantic import RefreshTokenRequest, SuccessAnswer, WithoutExtraInfo
+from app.backend.data.pydantic import RefreshTokenRequest, SuccessAnswer, EventTokensResponse
 
 sistem_err = "Server error"
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.post("/refresh", response_model=WithoutExtraInfo)
+@router.post("/refresh", response_model=EventTokensResponse)
 async def refresh_access_update(
     request_body: RefreshTokenRequest, 
     db_session: AsyncSession = Depends(get_db_session),
@@ -42,7 +42,7 @@ async def refresh_access_update(
             raise HTTPException(status_code=401, detail="Refresh token has been revoked or is invalid")
 
         if existing_token:
-            await token_dao.update(existing_token, data={"revoked": True})
+            await token_dao.update(UserJWT.jti == jti, data={"revoked": True})
         else:
             raise HTTPException(status_code=401, detail="Refresh token not found in database")
 
@@ -57,8 +57,8 @@ async def refresh_access_update(
             logger.error("Не вернулось значение (create_access_token, create_refresh_token)")
             raise HTTPException(status_code=500, detail=sistem_err)
 
-        issued_at = curretly_msk
-        expires_at = curretly_msk + timedelta(days=REFRESH_TOKEN_LIFETIME_DAYS)
+        issued_at = curretly_msk()
+        expires_at = curretly_msk() + timedelta(days=REFRESH_TOKEN_LIFETIME_DAYS)
         create_sql = CreateSql(db_session)
         await create_sql.create_UJWT(save_elements={
             "user_id": user_id,
@@ -83,7 +83,7 @@ async def refresh_access_update(
         logger.error(f"Ошибка при обновлении токена: {e}")
         raise HTTPException(status_code=500, detail=sistem_err)
 
-@router.post("/access", response_model=WithoutExtraInfo)
+@router.post("/access", response_model=EventTokensResponse)
 async def access_update(request_body: RefreshTokenRequest):
     try:
         verify = verify_refresh_token(request_body.refresh_token)
@@ -100,6 +100,7 @@ async def access_update(request_body: RefreshTokenRequest):
     
         return {
             "access_token": access_token, 
+            "refresh_token": None,
             "token_type": "access",
             } 
     except HTTPException as e:
@@ -112,20 +113,16 @@ async def access_update(request_body: RefreshTokenRequest):
         logger.error(f'Внезапная ошибка в функции access_update:\n {e}')
         raise HTTPException(status_code=500, detail=sistem_err) 
 
-@router.post("/check_update_tokens", response_model=SuccessAnswer)    
+@router.post("/check_update_tokens")    
 async def check_update_tokens(
     user_info: UserInfo = Depends(template_not_found_user)
 ):
     try:
-        user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
-        
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
         return {
             "success": True,
             "user_id": user_info.user_id,
             "message": "Token is valid"
         }
     except Exception as e:
+        logger.error(f"Не валидный токен либо дрегое: {e}")
         raise HTTPException(status_code=401, detail="Token validation failed")

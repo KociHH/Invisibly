@@ -17,7 +17,7 @@ from app.backend.data.sql.tables import FrozenAccounts, UserRegistered
 from app.backend.utils.other import send_code_email
 from app.backend.utils.user import path_html, DBUtils, EncryptEmail
 from app.backend.utils.dependencies import get_current_user_id, get_db_session
-from app.backend.utils.dependencies import curretly_msk
+from config.variables import curretly_msk
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -178,7 +178,7 @@ async def processing_delete(
         userb = BaseDAO(FrozenAccounts, user_info.db_session)
 
         frozen_time = 7
-        frozen_at = curretly_msk
+        frozen_at = curretly_msk()
         delete_at = frozen_at + timedelta(days=frozen_time)
 
         add_frozen = userb.create({

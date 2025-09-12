@@ -1,6 +1,4 @@
-import {getUrlParams, log_sending_to_page} from "./utils/other"
-import { checkUpdateTokens, securedApiCall } from "./utils/secured";
-
+import { getUrlParams, log_sending_to_page } from "./utils/other.js";
 
 class ConfirmCodePage {
     private token: string;
@@ -185,7 +183,7 @@ class ConfirmCodePage {
             resendDiv.appendChild(resendButton);
         }
     }
-
+    
     private CheckUiShown() {
         if (this.expiryIntervalId !== null) {
             clearInterval(this.expiryIntervalId);

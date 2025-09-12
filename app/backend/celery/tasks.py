@@ -8,7 +8,7 @@ from app.backend.data.sql.tables import SecretKeyJWT, UserJWT
 from config.env import TOKEN_LIFETIME_DAYS
 from app.backend.data.sql.utils import CreateSql
 from app.backend.data.redis.instance import __redis_save_sql_call__
-from app.backend.utils.dependencies import curretly_msk
+from config.variables import curretly_msk
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def check_jwt_token_date():
         async for db_session in get_db_session():
             cs = CreateSql(db_session)
             skj = BaseDAO(SecretKeyJWT, db_session)
-            key_obj = await skj.get_one()
+            key_obj = await skj.get_all()
 
             if key_obj:
                 created = key_obj.created_key
@@ -57,7 +57,7 @@ def cleaning_expiring_json():
                 logger.warning(f"Некорректная структура данных для ключа {user_key}")
                 continue
                 
-            if value['exp'] <= curretly_msk:
+            if value['exp'] <= curretly_msk():
                 keys_to_remove.append(user_key)
         
         if keys_to_remove:

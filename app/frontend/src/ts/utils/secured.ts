@@ -16,7 +16,7 @@ async function updateTokens(currentRefreshToken: string): Promise<{accessToken: 
             const errorData = await response.json();
             if (response.status === 401 && typeof errorData.detail === 'string' && errorData.detail.includes("Refresh token")) {
                 console.error("Refresh token истек. Перенаправление на страницу входа.");
-                clearTokensAndRedirectLogin();
+                // clearTokensAndRedirectLogin();
             } else {
                 console.error("Ошибка при обновлении токенов:", errorData.detail || response.statusText);
                 throw new Error(errorData.detail || `${SERVER_ERR}`);
@@ -40,10 +40,6 @@ function clearTokensAndRedirectLogin() {
     window.location.href = '/login';
 }
 
-function getAccessToken(): string | null {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
 async function updateAccess(currentRefreshToken: string): Promise<{accessToken: string}> {
     const response = await fetch("/access", {
         method: 'POST',
@@ -53,6 +49,12 @@ async function updateAccess(currentRefreshToken: string): Promise<{accessToken: 
         body: JSON.stringify({refresh_token: currentRefreshToken})
     })
 
+    console.log(`ACCESS_TOKEN_KEY: ${localStorage.getItem(ACCESS_TOKEN_KEY)}\n REFRESH_TOKEN_KEY: ${localStorage.getItem(REFRESH_TOKEN_KEY)}`)
+    if (response.status === 401) {
+        console.error("Refresh token истек при попытке получить новый Access token. Перенаправление на страницу входа.");
+        // clearTokensAndRedirectLogin();
+        throw new Error("Refresh token expire");
+    }
     if (response.status === 500 || !response.ok) {
         throw new Error(SERVER_ERR);
     }
@@ -68,7 +70,8 @@ async function securedApiCall(url_api: string, options: RequestInit = {}) {
     let refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
 
     if (!refreshToken) {
-        clearTokensAndRedirectLogin();
+        console.error("Не найден refreshToken")
+        // clearTokensAndRedirectLogin();
         return;
     }
 
@@ -94,14 +97,14 @@ async function securedApiCall(url_api: string, options: RequestInit = {}) {
             });
         } catch (accessError) {
             console.error("Не удалось обновить токен:", accessError);
-            clearTokensAndRedirectLogin();
+            // clearTokensAndRedirectLogin();
             return;
         }
     }
 
     if (!response.ok) {
         console.error("API вызов завершился неудачей после попытки обновления токена.", response);
-        clearTokensAndRedirectLogin();
+        // clearTokensAndRedirectLogin();
         return;
     }
 
@@ -117,12 +120,20 @@ async function checkUpdateTokens() {
             },
         });
         if (response && response.ok) {
+            if (response.status === 401 || response.status === 404) {
+                console.error("Токены не были проверены. Они истекли либо не найден юзер.");
+                return;
+            }
             const data = await response.json();
-            console.log("Токены успешно проверены");
+            console.log(`Токены юзера ${data.user_id} успешно проверены`);
             return data;
+        } else {
+            console.error("Api вызов не был получен из securedApiCall check_update_tokens.");
+            return;
         }
     } catch (error) {
         console.error('Ошибка проверки токенов:', error);
+        // clearTokensAndRedirectLogin();
         return;
     }
 }
@@ -132,6 +143,7 @@ export {
     updateTokens, 
     clearTokensAndRedirectLogin, 
     updateAccess, 
-    getAccessToken, 
-    checkUpdateTokens
+    checkUpdateTokens,
+    REFRESH_TOKEN_KEY,
+    ACCESS_TOKEN_KEY
 };   

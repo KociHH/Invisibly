@@ -4,9 +4,9 @@ from fastapi.exceptions import HTTPException
 import logging
 from app.backend.api import auth, root
 from app.backend.api.tools.security import tokens, other
-from app.backend.api.user import profile, settings, chats
+from app.backend.api.user import profile, chats
 import uvicorn
-from app.backend.api.user.settings import security
+from app.backend.api.user.settings import security, settings
 from config.env import UHOST, UPORT
 from fastapi.staticfiles import StaticFiles
 from app.backend.data.sql.tables import base, engine
@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from app.backend.celery.tasks import check_jwt_token_date
 from config.env import SECRET_KEY
 from config.variables import ALGORITHM
+from fastapi.responses import JSONResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,6 +47,10 @@ async def access_token_middleware(request: Request, call_next):
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError) as e:
             logger.warning(f"Ошибка в функции access_token_middleware:\n {e}")
             request.state.user_id = None
+            return JSONResponse(status_code=401, content={"detail": "Недействительный или просроченный токен"})
+
+    if not getattr(request.state, "user_id", None):
+        return JSONResponse(status_code=401, content={"detail": "Не аутентифицирован"})
 
     response = await call_next(request)
     return response

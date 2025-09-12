@@ -57,7 +57,7 @@ class UserJWT(base):
     __tablename__ = 'userJWT'
 
     id = Column(BigInteger, primary_key=True)
-    user_id = Column(BigInteger, ForeignKey('userRegistered.id'), unique=False, nullable=False)
+    user_id = Column(BigInteger, ForeignKey('userRegistered.user_id'), unique=False, nullable=False)
     jti = Column(String, unique=True, nullable=False)
     issued_at = Column(DateTime, nullable=False)
     expires_at = Column(DateTime, nullable=False)
@@ -74,6 +74,7 @@ class SecretKeyJWT(base):
     """
     __tablename__ = 'secretKeyJWT'
     
+    id = Column(BigInteger, primary_key=True)
     secret_key = Column(String, nullable=False)
     created_key = Column(DateTime, nullable=False)
     change_key = Column(DateTime, nullable=False)
@@ -87,7 +88,7 @@ class FrozenAccounts(base):
     __tablename__ = 'frozenAccounts'
 
     id = Column(BigInteger, primary_key=True)
-    user_id = Column(BigInteger, ForeignKey("userRegistered.id"), unique=True)
+    user_id = Column(BigInteger, ForeignKey("userRegistered.user_id"), unique=True)
     frozen_at = Column(DateTime, nullable=False)
     delete_at = Column(DateTime, nullable=False)
 

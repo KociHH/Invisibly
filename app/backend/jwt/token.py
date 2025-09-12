@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta
-from typing import Optional
 from jose import jwt, exceptions
 from fastapi import HTTPException, status
 from config.env import SECRET_KEY, REFRESH_TOKEN_LIFETIME_DAYS, ACCESS_TOKEN_LIFETIME_MINUTES
-from config.variables import ALGORITHM
-from app.backend.utils.dependencies import curretly_msk
+from config.variables import ALGORITHM, curretly_msk
 import logging
 import uuid
 
@@ -53,9 +51,9 @@ def create_token(
 
     to_encode = data.copy()
     if expire_delta:
-        expire = curretly_msk + expire_delta
+        expire = curretly_msk() + expire_delta
     else:
-        expire = curretly_msk + term
+        expire = curretly_msk() + term
     jti = str(uuid.uuid4())
     to_encode.update({
         "exp": expire, 

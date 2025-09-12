@@ -8,7 +8,7 @@ celery_app = Celery(
     'meetbot',
     broker=BROKER_URL_CELERY,
     backend=RESULT_BACKEND_CELERY,
-    include=['backend.celery.tasks']
+    include=['app.backend.celery.tasks']
 )
 
-celery_app.config_from_object('app.data.celery.celery_config') 
+celery_app.config_from_object('app.backend.celery.config') 

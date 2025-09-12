@@ -1,6 +1,6 @@
 from datetime import timedelta
 from app.backend.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
-from app.backend.utils.dependencies import curretly_msk
+from config.variables import curretly_msk
 import logging
 from app.backend.utils.user import UserInfo
 from fastapi import  HTTPException
@@ -55,6 +55,7 @@ class GeneralInfo:
 class RedisJsons(GeneralInfo):
     def __init__(self, user_id: int | str, handle: str) -> None:
         self.handle = handle
+        self.user_id = user_id
         self.name_key = f"{self.user_id}-{self.handle}"
         super().__init__(user_id=user_id)
 
@@ -70,11 +71,12 @@ class RedisJsons(GeneralInfo):
         obj = redis_data.get(self.name_key)
         if not obj:
             redis_data[self.name_key] = {}
+            obj = redis_data.get(self.name_key)
 
         for keys, value in data.items():
             obj[keys] = value
 
-        expiry_time = curretly_msk + timedelta(seconds=exp)
+        expiry_time = curretly_msk() + timedelta(seconds=exp)
         obj["exp"] = expiry_time.isoformat()
         __redis_save_sql_call__.cached(data=redis_data, ex=None)
         return redis_data
@@ -95,7 +97,7 @@ class RedisJsons(GeneralInfo):
         if not obj:
             redis_data[self.name_key] = {}
 
-        expiry_time = curretly_msk + timedelta(minutes=exp)
+        expiry_time = curretly_msk() + timedelta(minutes=exp)
         data["exp"] = expiry_time.isoformat()
         redis_data[self.name_key] = data
 
@@ -112,6 +114,7 @@ class RedisJsons(GeneralInfo):
             return_items = ["name", "surname", "login", "bio", "email"]
 
         obj: dict = redis_return_data(items=return_items, key_data=self.name_key)
+        print(obj)
         if obj.get("redis") == "empty":
             user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
             new_data = self.save_sql_call(

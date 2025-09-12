@@ -14,7 +14,6 @@ from config.env import SMTP_EMAIL, SMTP_HOST, SMTP_PASS, SMTP_PORT
 logger = logging.getLogger(__name__)
 
 
-
 def send_code_email(
         email_to: str,
         cause: str,
@@ -118,12 +117,12 @@ async def short_settings_profile(
         
         obj = new_data
 
-async def full_name_constructor(name: str, surname: str, if_isnone: str) -> str:
+def full_name_constructor(name: str | None, surname: str | None, if_isnone: str) -> str:
     full_name = ""
     if name:
         full_name += name
     if surname and name:
         full_name += f" {surname}"
-    else:
+    if surname or not name:
         full_name = surname if surname else if_isnone
     return full_name

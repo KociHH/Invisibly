@@ -6,14 +6,14 @@ import uuid
 from fastapi import Depends
 from app.backend.utils.user import PSWD_context, path_html, UserInfo
 from app.backend.utils.dependencies import template_not_found_user
-from app.backend.data.pydantic import SendPassword, SuccessAnswer, ResendСode, SendCode
+from app.backend.data.pydantic import SendPassword, SuccessAnswer, SuccessMessageAnswer, ResendСode, SendCode
 from app.backend.utils.other import send_code_email
 from app.backend.jwt.token import create_token
 from app.backend.jwt.utils import decode_jwt_token
 from datetime import timedelta
 from app.backend.data.redis.utils import RedisJsons
 from app.backend.data.redis.instance import __redis_save_jwt_token__
-from app.backend.utils.dependencies import curretly_msk
+from config.variables import curretly_msk
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -98,7 +98,7 @@ async def confirm_code(
                 data_token = redis_data.get(rj.name_key)
                 exp_token = data_token.get("exp")
 
-                exp_repeated_code = curretly_msk + timedelta(minutes=life_time_repeated_code)
+                exp_repeated_code = curretly_msk() + timedelta(minutes=life_time_repeated_code)
                 exp_repeated_code_iso = exp_repeated_code.isoformat()
 
             else:
@@ -147,7 +147,7 @@ async def confirm_password():
 
     return HTMLResponse(html_content)
 
-@router.post("/confirm_password", response_model=SuccessAnswer)
+@router.post("/confirm_password", response_model=SuccessMessageAnswer)
 async def processing_password(
     sp: SendPassword,
     user_info: UserInfo = Depends(template_not_found_user),
@@ -173,7 +173,10 @@ async def processing_password(
             "message": "Invalid password"
         }
     else:
-        return {"success": True}
+        return {
+            "success": True,
+            "message": "Confirm password"
+            }
     
 
 

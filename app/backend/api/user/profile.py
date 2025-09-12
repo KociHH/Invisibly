@@ -20,23 +20,32 @@ logger = logging.getLogger(__name__)
 
 # profile
 @router.get("/profile", response_class=HTMLResponse)
-async def user_profile(user_info: UserInfo = Depends(template_not_found_user)):
+async def user_profile():
     with open(path_html + "user/profile.html", "r", encoding="utf-8") as f:
         html_content = f.read()
     
+    html_content = html_content.replace("{{full_name}}", "N/A")
+    html_content = html_content.replace("{{login}}", "N/A")
+    html_content = html_content.replace("{{bio_content}}", "N/A")
+
+    return HTMLResponse(content=html_content)
+
+@router.get("/profile/data")
+async def user_profile_data(user_info: UserInfo = Depends(template_not_found_user)):
     user_id = user_info.user_id
     rj = RedisJsons(user_id, "UserRegistered")
     obj: dict = await rj.get_or_cache_user_info(user_info)
 
-    name = obj.get("name")
-    surname = obj.get("surname")
-    full_name = full_name_constructor(name, surname, "N/A")
+    name = obj.get("name", "")
+    surname = obj.get("surname", "")
 
-    html_content = html_content.replace("{{full_name}}", full_name)
-    html_content = html_content.replace("{{login}}", obj.get("login", "N/A"))
-    html_content = html_content.replace("{{bio_content}}", obj.get("bio", ""))
+    full_name = full_name_constructor(name, surname, str(user_info.user_id))
 
-    return HTMLResponse(content=html_content)
+    return {
+        "full_name": full_name,
+        "login": obj.get("login", "N/A"),
+        "bio": obj.get("bio", "")
+    }
 
 # edit profile
 @router.get("/edit_profile", response_class=HTMLResponse)
@@ -58,7 +67,7 @@ async def user_edit_profile(user_info: UserInfo = Depends(template_not_found_use
 @router.post("/edit_profile", response_model=SuccessMessageAnswer)
 async def processing_edit_profile(
     user: UserEditProfileNew, 
-    user_info: UserInfo = await template_not_found_user()
+    user_info: UserInfo = Depends(template_not_found_user),
     ):
     user_id = user.user_id
 

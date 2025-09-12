@@ -3,7 +3,7 @@ import logging
 from kos_Htools.sql.sql_alchemy import BaseDAO
 from app.backend.data.sql.tables import SecretKeyJWT, UserJWT
 from app.backend.jwt.utils import generate_jwt_secretkey
-from app.backend.utils.dependencies import curretly_msk
+from config.variables import curretly_msk
 from config.env import TOKEN_LIFETIME_DAYS
 from datetime import timedelta
 
@@ -26,10 +26,10 @@ class CreateSql:
 
         try:
             user_id = save_elements.get("user_id")
-            expires_at = save_elements.get("issued_at")
+            expires_at = save_elements.get("expires_at", curretly_msk())
             jti = save_elements.get("jti")
             if user_id and expires_at:
-                issued_at = save_elements.get("issued_at", curretly_msk)
+                issued_at = save_elements.get("issued_at")
                 revoked = save_elements.get("revoked", False)
                 token_type = save_elements.get("token_type", "refresh")
                 await ujwt.create(data={
@@ -53,10 +53,10 @@ class CreateSql:
         skj = BaseDAO(SecretKeyJWT, self.db_session)
         try:
             new_key = generate_jwt_secretkey(True)
-            change_key = curretly_msk + timedelta(days=TOKEN_LIFETIME_DAYS)
+            change_key = curretly_msk() + timedelta(days=TOKEN_LIFETIME_DAYS)
             await skj.create({
                 "secret_key": new_key,
-                "created_key": curretly_msk,
+                "created_key": curretly_msk(),
                 "change_key": change_key,
             })
 

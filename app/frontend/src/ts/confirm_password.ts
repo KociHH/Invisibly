@@ -1,5 +1,5 @@
-import { getUrlParams, log_sending_to_page } from "./utils/other";
-import { checkUpdateTokens, securedApiCall } from "./utils/secured";
+import { getUrlParams, log_sending_to_page } from "./utils/other.js";
+import { ACCESS_TOKEN_KEY, checkUpdateTokens, securedApiCall } from "./utils/secured.js";
 
 class ConfirmPassword {
     private async confirmPasswordForm(token: string, user_id: number | string) {
@@ -48,7 +48,7 @@ class ConfirmPassword {
         const data = await checkUpdateTokens()
 
         if (data && data.succses) {
-            const token = localStorage.getItem("accessToken")
+            const token = localStorage.getItem(ACCESS_TOKEN_KEY)
             const user_id = data.get("user_id")
             if (!token) {
                 log_sending_to_page("Токен истек, он не был обновлен через функцию checkUpdateTokens", "error")
