@@ -14,21 +14,31 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/settings", response_class=HTMLResponse)
-async def user_settings(user_info: UserInfo = Depends(template_not_found_user)):
+async def user_settings():
     with open(path_html + "user/settings.html", "r", encoding="utf-8") as f:
         html_content = f.read()
 
-    user_id = user_info.user_id
-    rj = RedisJsons(user_id, "UserRegistered")
-    obj: dict = await rj.get_or_cache_user_info(user_info)
-
-    html_content = html_content.replace("{{name}}", obj.get('name'))
-    html_content = html_content.replace("{{surname}}", obj.get('surname'))
-    html_content = html_content.replace("{{login}}", obj.get('login'))
-    html_content = html_content.replace("{{bio_content}}", obj.get('bio'))
+    html_content = html_content.replace("{{name}}", "N/A")
+    html_content = html_content.replace("{{surname}}", "N/A")
+    html_content = html_content.replace("{{login}}", "N/A")
+    html_content = html_content.replace("{{bio_content}}", "N/A")
 
     return HTMLResponse(content=html_content)
     
+@router.get("/settings/data")
+async def user_settings_data(user_info: UserInfo = Depends(template_not_found_user)):
+    user_id = user_info.user_id
+    
+    rj = RedisJsons(user_id, "UserRegistered")
+    obj: dict = await rj.get_or_cache_user_info(user_info)
+
+    return {
+        "name": obj.get('name', "N/A"),
+        "surname": obj.get('surname', "N/A"),
+        "login": obj.get('login', "N/A"),
+        "bio": obj.get('bio', "N/A"),
+    }
+
 @router.post("/logout")
 async def user_logout(
     se: SettingsExit,

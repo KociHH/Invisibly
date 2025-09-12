@@ -2,6 +2,20 @@ import { log_sending_to_page, getUrlParams } from "../../utils/other.js";
 import { checkUpdateTokens, securedApiCall } from "../../utils/secured.js";
 
 class ChangedEmail {
+    private async getElemEmail() {
+        const response = await securedApiCall("/change_email/data")
+        if (!response || !response.ok) {
+            log_sending_to_page('Не удалось загрузить данные для настроек', "error");
+            return;
+        }
+
+        const data_elem = await response.json();
+
+        const email = document.querySelector("#email") as HTMLElement;
+    
+        email.textContent = data_elem.email
+    }
+
     private async changedEmailForm(user_id: number | string) {
         const form = document.getElementById("change_email-form") as HTMLFormElement;
         
@@ -76,6 +90,8 @@ class ChangedEmail {
             return;
         }
     
+        await this.getElemEmail();
+
         await this.changedEmailForm(user_id);
     }
 }

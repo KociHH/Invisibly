@@ -23,7 +23,6 @@ class UserEditProfileNew(BaseModel):
     name: str
     surname: str
     login: str
-    email: EmailStr
     bio: str
 
 class UserProfile(BaseModel):

@@ -23,7 +23,7 @@
                 </div>
                 <div id="user_login">
                     <label for="login">Логин:</label>
-                    <input type="text" id="login" value="{{login}}"><br>
+                    @<input type="text" id="login" value="{{login}}"><br>
                 </div>
                 <div id="user_bio_content">
                     <label for="bio_content">Био:</label>
@@ -37,6 +37,6 @@
         </div>
     </div>
     <a href="/profile">Вы</a> <a href="/chats">Чаты</a> <a href="/friends">Друзья</a>
-    <script src="/static/user/edit_profile.js"></script>
+    <script src="/static/user/edit_profile.js" type="module"></script>
 </body>
 </html>

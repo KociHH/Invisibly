@@ -79,7 +79,7 @@ class RedisJsons(GeneralInfo):
         expiry_time = curretly_msk() + timedelta(seconds=exp)
         obj["exp"] = expiry_time.isoformat()
         __redis_save_sql_call__.cached(data=redis_data, ex=None)
-        return redis_data
+        return data
     
     def save_jwt_token(self, token: str, exp: int) -> dict:
         """
@@ -114,7 +114,7 @@ class RedisJsons(GeneralInfo):
             return_items = ["name", "surname", "login", "bio", "email"]
 
         obj: dict = redis_return_data(items=return_items, key_data=self.name_key)
-        print(obj)
+
         if obj.get("redis") == "empty":
             user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
             new_data = self.save_sql_call(

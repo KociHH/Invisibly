@@ -3,6 +3,10 @@ function log_sending_to_page(
     log_type: string = "log",
     send_page: string = "about:blank",
 ) {
+    // const url = new URL(send_page, window.location.origin);
+    // url.searchParams.set('log_msg', log_msg);
+    // url.searchParams.set('log_type', log_type);
+    // window.location.href = url.toString();
     if (log_type == "log") {
         console.log(log_msg);
     } else if (log_type == "error") {

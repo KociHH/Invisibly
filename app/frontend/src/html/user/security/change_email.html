@@ -7,7 +7,9 @@
 </head>
 <body>
     <h3>Ваш текущий email:</h3>
-    <h4>{{email}}</h4>
+    <div id="email">
+        <h4>{{email}}</h4>
+    </div>
 
     <h4>Введите новую почту:</h4>
     <form id="change_email-form">
@@ -15,6 +17,6 @@
         <button type="submit" class="change_email">Сменить почту</button>
     </form>
 
-    <script src="/static/user/change_email.js"></script>
+    <script src="/static/user/security/change_email.js" type="module"></script>
 </body>
 </html>

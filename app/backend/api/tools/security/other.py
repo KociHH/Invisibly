@@ -100,7 +100,7 @@ async def confirm_code(
 
                 exp_repeated_code = curretly_msk() + timedelta(minutes=life_time_repeated_code)
                 exp_repeated_code_iso = exp_repeated_code.isoformat()
-
+                
             else:
                 error = result.get("error")
                 raise HTTPException(status_code=500, detail=error)

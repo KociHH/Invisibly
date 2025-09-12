@@ -24,25 +24,26 @@ router = APIRouter()
 
 # email
 @router.get("/change_email", response_class=HTMLResponse)
-async def change_email(user_info: UserInfo = Depends(template_not_found_user)):
+async def change_email():
     with open(path_html + "user/security/change_email.html", "r", encoding="utf-8") as f:
         html_content = f.read()
 
-    user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
-    email = None
-    if user:
-        email = user.get("email")
+    html_content = html_content.replace("{{email}}", "N/A")
 
-    if not email or not user:
-        logger.info(f"Не найден email пользователя либо он сам {user_info.user_id}")
-        raise HTTPException(status_code=500, detail="Server error")
+    return HTMLResponse(content=html_content)
 
+@router.get("/change_email/data")
+async def change_email_data(user_info: UserInfo = Depends(template_not_found_user)):
+    user_id = user_info.user_id
+
+    rj = RedisJsons(user_id, "UserRegistered")
+    obj: dict = await rj.get_or_cache_user_info(user_info)
+    
+    email = obj.get("email")
     ee = EncryptEmail(email)
     email = ee.email_part_encrypt()
 
-    html_content = html_content.replace("{{email}}", email)
-
-    return HTMLResponse(content=html_content)
+    return {"email": email}
 
 @router.post("/change_email", response_model=SuccessMessageAnswer)
 async def processing_email(

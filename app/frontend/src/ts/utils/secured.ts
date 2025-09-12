@@ -52,7 +52,7 @@ async function updateAccess(currentRefreshToken: string): Promise<{accessToken: 
     console.log(`ACCESS_TOKEN_KEY: ${localStorage.getItem(ACCESS_TOKEN_KEY)}\n REFRESH_TOKEN_KEY: ${localStorage.getItem(REFRESH_TOKEN_KEY)}`)
     if (response.status === 401) {
         console.error("Refresh token истек при попытке получить новый Access token. Перенаправление на страницу входа.");
-        // clearTokensAndRedirectLogin();
+        clearTokensAndRedirectLogin();
         throw new Error("Refresh token expire");
     }
     if (response.status === 500 || !response.ok) {
@@ -71,7 +71,7 @@ async function securedApiCall(url_api: string, options: RequestInit = {}) {
 
     if (!refreshToken) {
         console.error("Не найден refreshToken")
-        // clearTokensAndRedirectLogin();
+        clearTokensAndRedirectLogin();
         return;
     }
 

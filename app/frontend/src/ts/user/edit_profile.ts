@@ -1,5 +1,5 @@
 import { log_sending_to_page } from "../utils/other.js";
-import { checkUpdateTokens, securedApiCall } from "../utils/secured";
+import { checkUpdateTokens, securedApiCall } from "../utils/secured.js";
 
 class Buttons {
     public save = this.saveButton()
@@ -15,7 +15,7 @@ class Buttons {
     }
 
     private cancleButton() {
-        const button = document.getElementById("cancle") as HTMLButtonElement;
+        const button = document.getElementById("cancel") as HTMLButtonElement;
         if (!button) {
             log_sending_to_page("Кнопка cancle не найдена", "error");
             return;
@@ -58,6 +58,21 @@ class EditProfile {
     private originalLogin: string = ""
     private originalBio: string = ""
 
+    private async valuesElementsProfile() {
+        const response = await securedApiCall("/edit_profile/data");
+        if (!response || !response.ok) {
+            log_sending_to_page('Не удалось загрузить данные для редактирования профиля', "error");
+            return;
+        }
+
+        const data_elem = await response.json()
+
+        this.items.name.value = data_elem.name;
+        this.items.surname.value = data_elem.surname;
+        this.items.login.value = data_elem.login;
+        this.items.bio.value = data_elem.bio;
+    }
+
     private async editProfileFrom(user_id: number | string) {
         this.updateIsChanges()
         
@@ -74,7 +89,7 @@ class EditProfile {
                         user_id,
                         "name": this.items.name.value,
                         "surname": this.items.surname.value,
-                        "login": this.items.login.value,
+                        "login": "@" + this.items.login.value,
                         "bio": this.items.bio.value,
                     })
                 });
@@ -82,12 +97,13 @@ class EditProfile {
                 if (response && response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        alert("Успешно сохранено!")
-                        return;
+                        alert("Успешно сохранено!");
+                        
+                        this.saveValuesProfileFrom(true);
                         
                     } else {
-                        alert("Не удалось сохранить.");
-                        return;
+                        alert(data.message);
+                        this.isChanges = true
                     }
                 }
             }
@@ -95,10 +111,7 @@ class EditProfile {
 
         this.buttons.cancle?.addEventListener("click", async () => {
             if (this.isChanges) {
-                this.items.name.value = this.originalName;
-                this.items.surname.value = this.originalSurname;
-                this.items.login.value = this.originalLogin;
-                this.items.bio.value = this.originalBio;
+                this.saveValuesProfileFrom(false);
                 this.updateIsChanges();
                 alert("Изменения отменены.");
             }
@@ -114,6 +127,20 @@ class EditProfile {
         return this.isChanges;
     }
 
+    private saveValuesProfileFrom(fromOriginal: boolean) {
+        if (fromOriginal) {
+            this.originalName = this.items.name.value;
+            this.originalSurname = this.items.surname.value;
+            this.originalLogin = this.items.login.value;
+            this.originalBio = this.items.bio.value;
+        } else {
+            this.items.name.value = this.originalName;
+            this.items.surname.value = this.originalSurname;
+            this.items.login.value = this.originalLogin;
+            this.items.bio.value = this.originalBio;
+        }
+    }
+
     async init() {
         const data = await checkUpdateTokens();
 
@@ -125,10 +152,9 @@ class EditProfile {
             return;
         }
 
-        this.originalName = this.items.name.value;
-        this.originalSurname = this.items.surname.value;
-        this.originalLogin = this.items.login.value;
-        this.originalBio = this.items.bio.value;
+        await this.valuesElementsProfile()
+
+        this.saveValuesProfileFrom(true);
 
         this.editProfileFrom(user_id); 
 

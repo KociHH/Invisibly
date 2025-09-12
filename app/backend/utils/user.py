@@ -61,6 +61,7 @@ class UserInfo(DBUtils):
             info = {
                 "user_id": user_obj.user_id,
                 "name": user_obj.name,
+                "surname": user_obj.surname,
                 "login": user_obj.login,
                 "email": user_obj.email,
                 "registration_date": user_obj.registration_date

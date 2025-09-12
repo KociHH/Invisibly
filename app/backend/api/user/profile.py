@@ -49,20 +49,33 @@ async def user_profile_data(user_info: UserInfo = Depends(template_not_found_use
 
 # edit profile
 @router.get("/edit_profile", response_class=HTMLResponse)
-async def user_edit_profile(user_info: UserInfo = Depends(template_not_found_user)):
+async def user_edit_profile():
     with open(path_html + "user/edit_profile.html", "r", encoding="utf-8") as f:
         html_content = f.read()
     
+    html_content = html_content.replace("{{name}}", "N/A")
+    html_content = html_content.replace("{{surname}}", "N/A")
+    html_content = html_content.replace("{{login}}", "N/A")
+    html_content = html_content.replace("{{bio_content}}", "N/A")
+
+    return HTMLResponse(content=html_content)
+
+@router.get("/edit_profile/data")
+async def user_edit_profile_data(user_info: UserInfo = Depends(template_not_found_user)):
     user_id = user_info.user_id
     rj = RedisJsons(user_id, "UserRegistered")
     obj: dict = await rj.get_or_cache_user_info(user_info)
 
-    html_content = html_content.replace("{{name}}", obj.get("name", "N/A"))
-    html_content = html_content.replace("{{surname}}", obj.get("surname", ""))
-    html_content = html_content.replace("{{login}}", obj.get("login", "N/A"))
-    html_content = html_content.replace("{{bio_content}}", obj.get("bio", ""))
+    login = obj.get("login", "N/A")
+    if login and "@" in login:
+        login = login.lstrip("@")
 
-    return HTMLResponse(content=html_content)
+    return {
+        "name": obj.get("name", "N/A"),
+        "surname": obj.get("surname", "N/A"),
+        "login": login,
+        "bio": obj.get("bio", "N/A")
+    }
 
 @router.post("/edit_profile", response_model=SuccessMessageAnswer)
 async def processing_edit_profile(
@@ -80,6 +93,7 @@ async def processing_edit_profile(
         "login": user.login,
         "bio": user.bio
     }
+    userb = BaseDAO(UserRegistered, user_info.db_session)
     rj = RedisJsons(user_id, "UserRegistered")
     obj: dict = await rj.get_or_cache_user_info(user_info)
 
@@ -94,13 +108,18 @@ async def processing_edit_profile(
     for field, modified_val in modified_data.items():
         old_val = now_data.get(field)
         if modified_val != old_val:
+            if field == "login":
+                if await userb.get_one(UserRegistered.login == modified_val):
+                    return {
+                        "success": False,
+                        "message": "Этот логин уже занят."
+                        }
             update_data[field] = modified_val
 
-    message = "profile not updated"
+    message = "Профиль не был обновлен."
     success = False
 
     if update_data:
-        userb = BaseDAO(UserRegistered, user_info.db_session)
         updated = await userb.update(
             where=UserRegistered.user_id == user_id,
             data=update_data
