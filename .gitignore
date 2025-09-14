@@ -21,3 +21,4 @@ coverage/
 .env.*
 *.session
 test.py
+node_modules/
