@@ -1,5 +1,4 @@
 from datetime import timedelta
-from app.backend.data.pydantic import SuccessAnswer, SuccessMessageAnswer, UserRegister, UserLogin
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.responses import HTMLResponse
 import logging
@@ -10,10 +9,9 @@ from app.backend.data.sql.utils import CreateSql
 from app.backend.utils.user import PSWD_context, path_html, DBUtils, EncryptEmail
 from config.variables import curretly_msk
 from app.backend.jwt.token import create_token
-from pydantic import ValidationError
-import uuid
 from config.env import REFRESH_TOKEN_LIFETIME_DAYS
-from app.backend.data.pydantic import AuthResponse
+from app.backend.schemas.user import UserRegister, UserLogin
+from app.backend.schemas.response_model import AuthResponse, SuccessAnswer
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

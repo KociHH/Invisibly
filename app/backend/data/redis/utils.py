@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Any
 from app.backend.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
 from config.variables import curretly_msk
 import logging
@@ -34,20 +35,25 @@ class GeneralInfo:
             self.user_id = str(user_id)
         self.user_id = user_id
 
-    def delete_all_data_user_item(self, item: str) -> dict:
-        redis_data: dict = __redis_save_sql_call__.get_cached()
-        if self.user_id not in redis_data:
-            return {"data": "user not found"}
-        
-        remove_keys = []
-        for key, data in redis_data.items():
-            if self.user_id in key and isinstance(data, dict):
-                item_data = data.get(item)
-                if item_data:
-                    remove_keys.append(key)
+    def replace_items_data(self, items: dict[str, Any]) -> dict:
+        """
+        Заменяет данные ключей где встречается self.user_id на новые в redis
+        Использует __redis_save_sql_call__
+        """
 
-        for key in remove_keys:
-            redis_data.pop(key)
+        redis_data: dict = __redis_save_sql_call__.get_cached()
+        
+        user_data_found = False
+
+        for key_in_redis, user_specific_data in redis_data.items():
+            if str(self.user_id) in key_in_redis and isinstance(user_specific_data, dict):
+                user_data_found = True
+                for key_items, new_value in items.items():
+                    if key_items in user_specific_data:
+                        user_specific_data[key_items] = new_value
+        
+        if not user_data_found:
+            return {"data": "user not found in cache"}
 
         __redis_save_sql_call__.cached(data=redis_data)
         return {"data": "updated"}
@@ -89,14 +95,14 @@ class RedisJsons(GeneralInfo):
         exp: время истечения *в минутах
         """
 
-        redis_data: dict | None = __redis_save_jwt_token__.get_cached()
-        obj = redis_data.get(self.name_key)
+        redis_data: dict | None = __redis_save_jwt_token__.get_cached()  
+        if not redis_data:
+            redis_data = {}
+
         data = {
             "token": token,
+            "used": False
         }
-        if not obj:
-            redis_data[self.name_key] = {}
-
         expiry_time = curretly_msk() + timedelta(minutes=exp)
         data["exp"] = expiry_time.isoformat()
         redis_data[self.name_key] = data
@@ -104,31 +110,54 @@ class RedisJsons(GeneralInfo):
         __redis_save_jwt_token__.cached(data=redis_data, ex=None)
         return redis_data 
 
-    async def get_or_cache_user_info(self, user_info: UserInfo, return_items: list | None = None):
+    async def get_or_cache_user_info(
+        self, 
+        user_info: UserInfo, 
+        return_items: list | None = None,
+        save_sql_redis: bool = True,
+        ):
         """
         Берет данные из __redis_save_sql_call__, если нет self.name_key в redis то береться из базы UserRegistered
         
         user_info: класс UserInfo объект юзера
         """
         if return_items == None:
-            return_items = ["name", "surname", "login", "bio", "email"]
+            return_items = ["name", "surname", "login", "bio", "email", "email_hash"]
 
         obj: dict = redis_return_data(items=return_items, key_data=self.name_key)
 
         if obj.get("redis") == "empty":
             user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
-            new_data = self.save_sql_call(
-                {
-                    "user_id": user.get("user_id"),
-                    "name": user.get("name"),
-                    "surname": user.get("surname"),
-                    "login": user.get("login"),
-                    "bio": user.get("bio"),
-                    "email": user.get("email"),
-                })
-            if not new_data:
-                logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
-                raise HTTPException(status_code=500, detail="Server error")
+            new_data = {
+                "user_id": user.get("user_id"),
+                "name": user.get("name"),
+                "surname": user.get("surname"),
+                "login": user.get("login"),
+                "bio": user.get("bio"),
+                "email": user.get("email"),
+            }
+
+            if save_sql_redis:
+                new_data = self.save_sql_call(new_data)
+                if not new_data:
+                    logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
+                    raise HTTPException(status_code=500, detail="Server error")
 
             obj = new_data
         return obj
+
+    def delete_token(self):
+        try:
+            jwt_tokens: dict | None = __redis_save_jwt_token__.get_cached()
+            rj = RedisJsons(self.user_id, self.handle)
+
+            if jwt_tokens:
+                token_info: dict | None = jwt_tokens.get(rj.name_key)
+                if token_info:
+                    jwt_tokens.pop(rj.name_key)
+                    __redis_save_jwt_token__.cached(jwt_tokens)
+    
+        except Exception as e:
+            logger.error(f"Внезапная ошибка: {e}")
+            return False
+        return True

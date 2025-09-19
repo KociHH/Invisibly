@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.params import Query
 from fastapi.responses import HTMLResponse
 import logging
 from app.backend.jwt.utils import decode_jwt_token
@@ -8,16 +9,19 @@ from app.backend.utils.user import PSWD_context, path_html, UserInfo
 from fastapi import Depends
 from app.backend.utils.dependencies import  template_not_found_user
 from jose import jwt
-from app.backend.data.redis.instance import __redis_save_sql_call__
+from app.backend.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
 from app.backend.data.redis.utils import RedisJsons
-from app.backend.data.pydantic import ConfirmCode, DeleteAccount, NewPassword, SuccessMessageAnswer, UserEditProfileNew, NewEmail
+from app.backend.schemas.security import DeleteAccount, NewPassword, ChangeEmailForm
+from app.backend.schemas.response_model import SuccessAnswer, EmailSendVerify, SuccessMessageAnswer
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.backend.data.sql.tables import FrozenAccounts, UserRegistered
-from app.backend.utils.other import send_code_email
+from app.backend.utils.other import EmailProcess
 from app.backend.utils.user import path_html, DBUtils, EncryptEmail
 from app.backend.utils.dependencies import get_current_user_id, get_db_session
 from config.variables import curretly_msk
+from app.backend.jwt.token import create_token
+import uuid
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -28,13 +32,22 @@ async def change_email():
     with open(path_html + "user/security/change_email.html", "r", encoding="utf-8") as f:
         html_content = f.read()
 
-    html_content = html_content.replace("{{email}}", "N/A")
+    html_content = html_content.replace("{{email}}", "")
 
     return HTMLResponse(content=html_content)
 
 @router.get("/change_email/data")
-async def change_email_data(user_info: UserInfo = Depends(template_not_found_user)):
+async def change_email_data(
+    user_info: UserInfo = Depends(template_not_found_user)
+    ):
     user_id = user_info.user_id
+
+    rj = RedisJsons(user_id, "change_email")
+
+    del_token = rj.delete_token()
+    if not del_token:
+        logger.error("Функция delete_token завершилась с ошибкой")
+        raise HTTPException(status_code=500, detail="Server error")
 
     rj = RedisJsons(user_id, "UserRegistered")
     obj: dict = await rj.get_or_cache_user_info(user_info)
@@ -45,64 +58,43 @@ async def change_email_data(user_info: UserInfo = Depends(template_not_found_use
 
     return {"email": email}
 
-@router.post("/change_email", response_model=SuccessMessageAnswer)
+@router.post("/change_email", response_model=EmailSendVerify)
 async def processing_email(
-    ne: NewEmail, 
+    cef: ChangeEmailForm, 
     user_info: UserInfo = Depends(template_not_found_user)
 ):
     current_user_id = user_info.user_id
 
-    if ne.user_id != current_user_id:
+    if cef.user_id != current_user_id:
         raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
     
-    userb = BaseDAO(UserRegistered, user_info.db_session)
+    rj = RedisJsons(current_user_id, "change_email")
     dbu = DBUtils(user_info.db_session)
 
-    if not ne.confirm:
-        db_email_hash, email_hash = await dbu.email_verification(ne.email, current_user_id)
-        if db_email_hash:
-            return {
-                "success": False, 
-                "message": "This email is busy"
-            }
-    
-    if ne.confirm and ne.confirm != "true":
-        result_send = send_code_email(ne.email, "для подтверждения почты.")
-        if result_send:
-            success = result_send.get("seccess")
-            error = result_send.get("error")
+    tokens: dict | None = __redis_save_jwt_token__.get_cached()
+    token_info = tokens.get(rj.name_key) if tokens else False
 
-            if success:
-                return {
-                    "send_for_verification": True
-                }
-            else:
-                logger.error(f"Произошла ошибка при отправке кода на почту {ne.email}: {error}")
-                raise HTTPException(status_code=500, detail=error)
-        else:
-            raise HTTPException(status_code=500, detail="The code was not delivered")
+    db_email_hash, _ = await dbu.email_verification(cef.email, current_user_id)
+    if db_email_hash:
+        return {
+            "success": False, 
+            "message": "This email is busy",
+        }
 
-    email_update = await userb.update(
-        UserRegistered.user_id == current_user_id,
-        {
-            "email": ne.email,
-            "email_hash": email_hash,
-            })
-    
-    if not email_update:
-        logger.error(f"По неизвестной причине email пользователя {current_user_id} не был обновлен")
-        raise HTTPException(status_code=500, detail="Server error")
-    
-    rj = RedisJsons(current_user_id, "change_email")
-    data_result = rj.delete_all_data_user_item(item="email")
-    if not data_result:
-        logger.warning(f"Не вернулось значение dict функции delete_all_data_user_item: {data_result}")
-    
-    logger.info(f"Email пользователя {current_user_id} успешно обновлен на {ne.email}")
-    return {
-        "success": True, 
-        "message": "Email updated"
-        }        
+    if token_info:
+        del_token = rj.delete_token()
+        if not del_token:
+            logger.error("Функция delete_token завершилась с ошибкой")
+            raise HTTPException(status_code=500, detail="Server error")
+
+    ep = EmailProcess(cef.email)
+    try:
+        result = ep.send_change_email(rj, current_user_id, "change_email")
+        return result
+            
+    except Exception as e:
+        logger.error(f"Ошибка в функции send_change_email: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send verification email")       
     
 # password
 @router.get("/change_password", response_class=HTMLResponse)

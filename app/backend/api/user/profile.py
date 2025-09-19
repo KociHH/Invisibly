@@ -9,7 +9,8 @@ from jose import jwt
 from app.backend.data.redis.instance import __redis_save_sql_call__
 from app.backend.data.redis.utils import RedisJsons
 from app.backend.data.redis.utils import redis_return_data
-from app.backend.data.pydantic import SuccessAnswer, SuccessMessageAnswer, UserEditProfileNew, UserProfile
+from app.backend.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
+from app.backend.schemas.user import UserEditProfileNew, UserProfile
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.backend.data.sql.tables import UserRegistered, get_db_session
@@ -24,13 +25,13 @@ async def user_profile():
     with open(path_html + "user/profile.html", "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    html_content = html_content.replace("{{full_name}}", "N/A")
-    html_content = html_content.replace("{{login}}", "N/A")
-    html_content = html_content.replace("{{bio_content}}", "N/A")
+    html_content = html_content.replace("{{full_name}}", "")
+    html_content = html_content.replace("{{login}}", "")
+    html_content = html_content.replace("{{bio_content}}", "")
 
     return HTMLResponse(content=html_content)
 
-@router.get("/profile/data")
+@router.get("/profile/data", response_model=UserProfile)
 async def user_profile_data(user_info: UserInfo = Depends(template_not_found_user)):
     user_id = user_info.user_id
     rj = RedisJsons(user_id, "UserRegistered")
@@ -42,9 +43,10 @@ async def user_profile_data(user_info: UserInfo = Depends(template_not_found_use
     full_name = full_name_constructor(name, surname, str(user_info.user_id))
 
     return {
+        "user_id": user_id,
         "full_name": full_name,
-        "login": obj.get("login", "N/A"),
-        "bio": obj.get("bio", "")
+        "login": obj.get("login") or "N/A",
+        "bio": obj.get("bio") or "N/A"
     }
 
 # edit profile
@@ -53,10 +55,10 @@ async def user_edit_profile():
     with open(path_html + "user/edit_profile.html", "r", encoding="utf-8") as f:
         html_content = f.read()
     
-    html_content = html_content.replace("{{name}}", "N/A")
-    html_content = html_content.replace("{{surname}}", "N/A")
-    html_content = html_content.replace("{{login}}", "N/A")
-    html_content = html_content.replace("{{bio_content}}", "N/A")
+    html_content = html_content.replace("{{name}}", "")
+    html_content = html_content.replace("{{surname}}", "")
+    html_content = html_content.replace("{{login}}", "")
+    html_content = html_content.replace("{{bio_content}}", "")
 
     return HTMLResponse(content=html_content)
 
@@ -66,15 +68,15 @@ async def user_edit_profile_data(user_info: UserInfo = Depends(template_not_foun
     rj = RedisJsons(user_id, "UserRegistered")
     obj: dict = await rj.get_or_cache_user_info(user_info)
 
-    login = obj.get("login", "N/A")
+    login = obj.get("login") or "N/A"
     if login and "@" in login:
         login = login.lstrip("@")
 
     return {
-        "name": obj.get("name", "N/A"),
-        "surname": obj.get("surname", "N/A"),
+        "name": obj.get("name") or "N/A",
+        "surname": obj.get("surname") or "N/A",
         "login": login,
-        "bio": obj.get("bio", "N/A")
+        "bio": obj.get("bio")
     }
 
 @router.post("/edit_profile", response_model=SuccessMessageAnswer)

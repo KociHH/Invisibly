@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 import logging
-from app.backend.data.pydantic import SettingsExit
+from app.backend.schemas.user import SettingsExit
 from app.backend.data.redis.utils import RedisJsons, redis_return_data
 from app.backend.utils.user import path_html, UserInfo
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,10 +18,10 @@ async def user_settings():
     with open(path_html + "user/settings.html", "r", encoding="utf-8") as f:
         html_content = f.read()
 
-    html_content = html_content.replace("{{name}}", "N/A")
-    html_content = html_content.replace("{{surname}}", "N/A")
-    html_content = html_content.replace("{{login}}", "N/A")
-    html_content = html_content.replace("{{bio_content}}", "N/A")
+    html_content = html_content.replace("{{name}}", "")
+    html_content = html_content.replace("{{surname}}", "")
+    html_content = html_content.replace("{{login}}", "")
+    html_content = html_content.replace("{{bio_content}}", "")
 
     return HTMLResponse(content=html_content)
     
@@ -33,10 +33,10 @@ async def user_settings_data(user_info: UserInfo = Depends(template_not_found_us
     obj: dict = await rj.get_or_cache_user_info(user_info)
 
     return {
-        "name": obj.get('name', "N/A"),
-        "surname": obj.get('surname', "N/A"),
-        "login": obj.get('login', "N/A"),
-        "bio": obj.get('bio', "N/A"),
+        "name": obj.get('name') or "N/A",
+        "surname": obj.get('surname') or "N/A",
+        "login": obj.get('login') or "N/A",
+        "bio": obj.get('bio') or "N/A",
     }
 
 @router.post("/logout")

@@ -2,10 +2,11 @@ from jose import jwt
 from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 import logging
-from app.backend.api import auth, root
-from app.backend.api.tools.security import tokens, other
-from app.backend.api.user import profile, chats
 import uvicorn
+from app.backend.api import auth, root
+from app.backend.api.tools.security import tokens, validation
+from app.backend.api.user import profile, chats
+from app.backend.api.tools.helper import user
 from app.backend.api.user.settings import security, settings
 from config.env import UHOST, UPORT
 from fastapi.staticfiles import StaticFiles
@@ -63,7 +64,8 @@ app.include_router(settings.router)
 app.include_router(chats.router)
 app.include_router(root.router)
 app.include_router(tokens.router)
-app.include_router(other.router)
+app.include_router(validation.router)
+app.include_router(user.router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)

@@ -42,3 +42,5 @@ def decode_jwt_token(token: str, secret_key: str = SECRET_KEY, algorithms: str =
             status_code=401,
             detail="Invalid or expired token"
         )
+
+

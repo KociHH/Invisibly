@@ -1,4 +1,4 @@
-import { log_sending_to_page, getUrlParams } from "../../utils/other.js";
+import { log_sending_to_page, getUrlParams, clearItemsStorage, TIME_EXP_REPEATED, TIME_EXP_TOKEN } from "../../utils/other.js";
 import { checkUpdateTokens, securedApiCall } from "../../utils/secured.js";
 
 class ChangedEmail {
@@ -11,7 +11,7 @@ class ChangedEmail {
 
         const data_elem = await response.json();
 
-        const email = document.querySelector("#email") as HTMLElement;
+        const email = document.querySelector("#current_email") as HTMLElement;
     
         email.textContent = data_elem.email
     }
@@ -27,26 +27,20 @@ class ChangedEmail {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
         
+            clearItemsStorage([TIME_EXP_REPEATED, TIME_EXP_TOKEN]);
+
+            const buttonSubmit = document.querySelector(".change_email") as HTMLButtonElement;
+            buttonSubmit.disabled = true;
+            buttonSubmit.textContent = "Отправка, подождите...";
+            
             const emailInput = document.getElementById("email") as HTMLInputElement;
             const email = emailInput.value.trim();
-    
-            if (!email) {
-                log_sending_to_page("Введите email", "error");
-                return;
-            }
-
-            const urlParams = getUrlParams(['verify', 'cause']);
-            const isVerified = urlParams.verify === 'true' && urlParams.cause === 'change_email';
 
             const requestBody: any = {
-                email,
                 user_id,
+                email,
             };
-
-            if (isVerified) {
-                requestBody.confirm = true;
-            }
-
+    
             const response = await securedApiCall("/change_email", {
                 method: "POST",
                 headers: {
@@ -57,23 +51,19 @@ class ChangedEmail {
     
             if (response && response.ok) {
                 const data = await response.json();
-    
-                if (data.send_for_verification) {
-                    window.location.href = `/confirm_code?cause=${encodeURIComponent("change_email")}`;
-                    return;
-                }
-    
+
                 if (data.success) {
-                    alert("Email successfully changed!");
-                    window.location.href = "/settings";
-                    return;
+                    window.location.href = `/confirm_code?cause=${encodeURIComponent("change_email")}`;
+                    return;     
+
                 } else {
-                    alert(data.message || "Ошибка при смене email");
-                    return;
+                    buttonSubmit.disabled = false;
+                    buttonSubmit.textContent = "Сменить почту";
+                    alert(data.message);
                 }
     
             } else {
-                log_sending_to_page("Не получены данные с сервера, либо запрос завершился неудачей.", "error");
+                console.error("Не получены данные с сервера, либо запрос завершился неудачей.");
                 return;
             }
         });
@@ -86,7 +76,7 @@ class ChangedEmail {
         if (data && data.success) {
             user_id = data.user_id;
         } else {
-            log_sending_to_page(`Не вернулось значение функции checkUpdateTokens: ${data}`, "error");
+            console.error(`Не вернулось значение функции checkUpdateTokens: ${data}`);
             return;
         }
     

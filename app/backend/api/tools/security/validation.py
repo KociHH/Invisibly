@@ -1,13 +1,16 @@
 import datetime
-from fastapi import APIRouter, HTTPException, Query
+import urllib.parse
+from fastapi import APIRouter, HTTPException, Body
+from fastapi.params import Query
 from fastapi.responses import HTMLResponse
 import logging
 import uuid
 from fastapi import Depends
 from app.backend.utils.user import PSWD_context, path_html, UserInfo
 from app.backend.utils.dependencies import template_not_found_user
-from app.backend.data.pydantic import SendPassword, SuccessAnswer, SuccessMessageAnswer, ResendСode, SendCode
-from app.backend.utils.other import send_code_email
+from app.backend.schemas.security import SendPassword, ResendCode, SendCode
+from app.backend.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
+from app.backend.utils.other import EmailProcess
 from app.backend.jwt.token import create_token
 from app.backend.jwt.utils import decode_jwt_token
 from datetime import timedelta
@@ -20,20 +23,28 @@ router = APIRouter()
 
 # email code
 @router.get("/confirm_code", response_class=HTMLResponse)
+async def confirm_code():
+    with open(path_html + "confirm_code.html", "r", encoding="utf-8") as html_file:
+        html_content = html_file.read()
+
+    html_content = html_content.replace("{{email}}", "")
+    html_content = html_content.replace("{{life_time}}", "")
+    html_content = html_content.replace("{{life_time_repeated_code}}", "")
+
+    return HTMLResponse(content=html_content)
+
+@router.get("/confirm_code/data")
 # 1. /confirm_code?cause=... 2. /confirm_code?cause=...&resend=...?
-async def confirm_code(
-    rc: ResendСode = Depends(),
+async def confirm_code_data(
+    rc: ResendCode = Depends(),
     cause: str = Query(..., description="Причина вызова confirm_code"),
     user_info: UserInfo = Depends(template_not_found_user),
     ):
-    with open(path_html + "confirm_code.html", "r", encoding="utf-8") as html_file:
-        html_content = html_file.read()
     
-    life_time_token = 5
-    life_time_repeated_code = 1
     send_code = False
 
-    user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
+    rj = RedisJsons(user_info.user_id, cause)
+    user = await rj.get_or_cache_user_info(user_info, ["email"], False)
     if user:
         email = user.get("email")
 
@@ -41,15 +52,15 @@ async def confirm_code(
         logger.error(f"Не найден email пользователя либо он сам {user_info.user_id}")
         raise HTTPException(status_code=500, detail="Server error")
     
-    rj = RedisJsons(user_info.user_id, cause)
     redis_data: dict | None = __redis_save_jwt_token__.get_cached()
-    old_token = redis_data.get(rj.name_key)
+    token_info = redis_data.get(rj.name_key)
 
-    if rc.resend:
-        send_code = True
+    new_email: str | None = None
 
-    elif old_token:
+    if token_info:
         try:
+            old_token = token_info.get("token")
+            used: bool = token_info.get("used", False)
             old_verification_token = decode_jwt_token(old_token)
             user_id = old_verification_token.get("user_id")
             
@@ -57,70 +68,66 @@ async def confirm_code(
                 raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
 
             code = old_verification_token.get("verification_code")
-            if not code:
-                logger.error(f'Код не найден из токена: {code}')
+            new_email = old_verification_token.get("new_email")
+            if not code or not new_email:
+                logger.error(f'Код либо new_email не найден из токена: {code}')
                 raise HTTPException(status_code=500, detail="System error")
+        
+        except Exception as e:
+            logger.error(f"Ошибка с токеном: {e}")
+            raise HTTPException(status_code=500, detail="System error")
+    else:
+        logger.error("Нет jwt токена для подтверждения кода")
+        raise HTTPException(status_code=404, detail="Not found jwt code token")
 
+    if rc.resend:
+        send_code = True
+
+    else:
+        try:
+            if not used:
+                life_time_repeated_code = 1
+
+                exp_token = token_info.get("exp")
+                exp_repeated_code = curretly_msk() + timedelta(minutes=life_time_repeated_code)
+                exp_repeated_code_iso = exp_repeated_code.isoformat()
+
+                return_data = {
+                    "verification_token": old_token,
+                    "exp_repeated_code_iso": exp_repeated_code_iso,
+                    "exp_token": exp_token,
+                    "email": new_email,
+                }
+                token_info["used"] = True
+                redis_data[rj.name_key] = token_info
+                __redis_save_jwt_token__.cached(redis_data)
+            else:
+                return_data = {
+                    "email": new_email,
+                    "verification_token": old_token,
+                    }
+                    
             send_code = False
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"Ошибка с токеном: {e}")
             raise HTTPException(status_code=500, detail="System error")
-    
-    else:
-        send_code = True
-
+    # если повторная отправка
     if send_code:
-        result = send_code_email(email, "для смены пароля.", 6)
+        ep = EmailProcess(new_email)
+        try:
+            return_data = ep.send_change_email(rj, user_info.user_id, "confirm_code")
+
+        except Exception as e:
+            logger.error(f"Ошибка в функции send_change_email: {e}")
+            raise HTTPException(status_code=500, detail="System error")
     
-        if result:
-            success = result.get("success")
-
-            if success:
-                code: int = result.get("code")
-                token_data = {
-                    "user_id": user_info.user_id,
-                    "verification_code": code,
-                    "jti": str(uuid.uuid4()),
-                }
-                verification_token, _ = create_token(
-                    token_data, 
-                    timedelta(minutes=life_time_token)
-                    )
-                redis_data = rj.save_jwt_token(verification_token, life_time_token)
-
-                if not redis_data:
-                    logger.error(f'Не полученна дата *redis_data при сохранении в redis: {redis_data}')
-                    raise HTTPException(status_code=500, detail="Date not received")
-                
-                # Подсчет дат
-                data_token = redis_data.get(rj.name_key)
-                exp_token = data_token.get("exp")
-
-                exp_repeated_code = curretly_msk() + timedelta(minutes=life_time_repeated_code)
-                exp_repeated_code_iso = exp_repeated_code.isoformat()
-                
-            else:
-                error = result.get("error")
-                raise HTTPException(status_code=500, detail=error)
-        else:
-            raise HTTPException(status_code=500, detail="The code was not delivered")
-
-    html_content = html_content.replace("{{verification_token}}", verification_token)
-    html_content = html_content.replace("{{email}}", email)
-
-    html_content = html_content.replace("{{exp_token}}", exp_token)
-    html_content = html_content.replace("{{exp_repeated_code}}", exp_repeated_code_iso)
-
-    html_content = html_content.replace("{{life_time_token}}", life_time_token)
-    html_content = html_content.replace("{{life_time}}", life_time_repeated_code)
-
-    return HTMLResponse(content=html_content)
+    return return_data
 
 @router.post("/confirm_code", response_model=SuccessAnswer)
 async def check_code(
-    rc: SendCode = Depends(), 
+    rc: SendCode, 
     user_info: UserInfo = Depends(template_not_found_user)
     ):
     verification_token = decode_jwt_token(rc.token)
@@ -132,7 +139,7 @@ async def check_code(
     code = verification_token.get("verification_code")
     success = False
 
-    if code == rc.code:
+    if code == int(rc.code):
         success = True
 
     return {

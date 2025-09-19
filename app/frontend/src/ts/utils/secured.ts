@@ -1,6 +1,6 @@
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const ACCESS_TOKEN_KEY = 'accessToken';
-const SERVER_ERR = 'Server error'
+const SERVER_ERROR = 'Server error'
 
 async function updateTokens(currentRefreshToken: string): Promise<{accessToken: string; refreshToken: string}> {
     try {
@@ -16,10 +16,10 @@ async function updateTokens(currentRefreshToken: string): Promise<{accessToken: 
             const errorData = await response.json();
             if (response.status === 401 && typeof errorData.detail === 'string' && errorData.detail.includes("Refresh token")) {
                 console.error("Refresh token истек. Перенаправление на страницу входа.");
-                // clearTokensAndRedirectLogin();
+                clearTokensAndRedirectLogin();
             } else {
                 console.error("Ошибка при обновлении токенов:", errorData.detail || response.statusText);
-                throw new Error(errorData.detail || `${SERVER_ERR}`);
+                throw new Error(errorData.detail || `${SERVER_ERROR}`);
             }
         }
 
@@ -30,7 +30,7 @@ async function updateTokens(currentRefreshToken: string): Promise<{accessToken: 
         };
     } catch (error) {
         console.error("Ошибка в функции refreshTokens:\n", error);
-        throw new Error(SERVER_ERR);
+        throw new Error(SERVER_ERROR);
     }
 }
 
@@ -49,14 +49,13 @@ async function updateAccess(currentRefreshToken: string): Promise<{accessToken: 
         body: JSON.stringify({refresh_token: currentRefreshToken})
     })
 
-    console.log(`ACCESS_TOKEN_KEY: ${localStorage.getItem(ACCESS_TOKEN_KEY)}\n REFRESH_TOKEN_KEY: ${localStorage.getItem(REFRESH_TOKEN_KEY)}`)
     if (response.status === 401) {
         console.error("Refresh token истек при попытке получить новый Access token. Перенаправление на страницу входа.");
         clearTokensAndRedirectLogin();
         throw new Error("Refresh token expire");
     }
     if (response.status === 500 || !response.ok) {
-        throw new Error(SERVER_ERR);
+        throw new Error(SERVER_ERROR);
     }
 
     const data = await response.json();
@@ -97,14 +96,14 @@ async function securedApiCall(url_api: string, options: RequestInit = {}) {
             });
         } catch (accessError) {
             console.error("Не удалось обновить токен:", accessError);
-            // clearTokensAndRedirectLogin();
+            clearTokensAndRedirectLogin();
             return;
         }
     }
 
     if (!response.ok) {
+        clearTokensAndRedirectLogin();
         console.error("API вызов завершился неудачей после попытки обновления токена.", response);
-        // clearTokensAndRedirectLogin();
         return;
     }
 
@@ -133,10 +132,35 @@ async function checkUpdateTokens() {
         }
     } catch (error) {
         console.error('Ошибка проверки токенов:', error);
-        // clearTokensAndRedirectLogin();
+        clearTokensAndRedirectLogin();
         return;
     }
 }
+
+async function DeleteTokenRedis(handle: string) {
+    try {
+        const response = await securedApiCall("/redis/delete_token/user", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({handle})
+        });
+        if (response && response.ok) {
+            const data = await response.json();
+
+            return data;
+
+        } else {
+            console.error("Api вызов не был получен из securedApiCall check_update_tokens.");
+            return;
+        }
+    } catch (error) {
+        console.error('Ошибка при удалении токена:', error);
+        return;
+    }
+}
+
 
 export {
     securedApiCall, 
@@ -144,6 +168,8 @@ export {
     clearTokensAndRedirectLogin, 
     updateAccess, 
     checkUpdateTokens,
+    DeleteTokenRedis,
     REFRESH_TOKEN_KEY,
     ACCESS_TOKEN_KEY
 };   
+

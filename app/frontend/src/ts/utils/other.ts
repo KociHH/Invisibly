@@ -1,3 +1,6 @@
+const TIME_EXP_TOKEN = "timeExpToken"
+const TIME_EXP_REPEATED = "timeExpRepeated"
+
 function log_sending_to_page(
     log_msg: string, 
     log_type: string = "log",
@@ -28,7 +31,7 @@ function getUrlParams(
     type Dict = Record<string, any>
     let result_params: Dict = {}
     
-    for (const param in get_params) {
+    for (const param of get_params) {
         const exists = params.has(param)
         
         if (exists) {
@@ -39,4 +42,19 @@ function getUrlParams(
     return result_params;
 }
 
-export {log_sending_to_page, getUrlParams}
+function clearItemsStorage(tokens: Array<string>) {
+    for (let token of tokens) {
+        localStorage.removeItem(token)
+    };
+
+    console.log(`Очищенны элементы в хранилище: ${tokens}`);
+    return;
+}
+
+export {
+    log_sending_to_page, 
+    getUrlParams, 
+    clearItemsStorage,
+    TIME_EXP_REPEATED,
+    TIME_EXP_TOKEN
+}

@@ -63,6 +63,7 @@ class UserInfo(DBUtils):
                 "name": user_obj.name,
                 "surname": user_obj.surname,
                 "login": user_obj.login,
+                "bio": user_obj.bio,
                 "email": user_obj.email,
                 "registration_date": user_obj.registration_date
             }

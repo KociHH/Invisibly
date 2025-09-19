@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 import logging
 from pydantic import BaseModel
+from app.backend.data.redis.utils import RedisJsons
 from app.backend.jwt.token import verify_refresh_token, create_token
 from app.backend.data.sql.tables import get_db_session, UserJWT
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +15,8 @@ from datetime import timedelta
 from config.variables import curretly_msk
 from jose import jwt, exceptions
 from app.backend.utils.dependencies import template_not_found_user
-from app.backend.data.pydantic import RefreshTokenRequest, SuccessAnswer, EventTokensResponse
+from app.backend.schemas.token import DeleteTokenRedis, RefreshTokenRequest
+from app.backend.schemas.response_model import EventTokensResponse
 
 sistem_err = "Server error"
 router = APIRouter()
@@ -126,3 +128,21 @@ async def check_update_tokens(
     except Exception as e:
         logger.error(f"Не валидный токен либо дрегое: {e}")
         raise HTTPException(status_code=401, detail="Token validation failed")
+
+@router.post("/redis/delete_token/user")
+async def redis_delete_token_user(
+    dtr: DeleteTokenRedis,
+    user_info: UserInfo = Depends(template_not_found_user)
+): 
+    rj = RedisJsons(user_info.user_id, dtr.handle)
+
+    del_token = rj.delete_token()
+    if not del_token:
+        logger.error(f"Функция delete_token завершилась с ошибкой: {del_token}")
+        raise HTTPException(status_code=500, detail="Server error")
+    
+    else:
+        return {
+            "success": True,
+            "message": "Deleted token!"
+        }

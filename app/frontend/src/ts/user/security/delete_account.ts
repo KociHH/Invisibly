@@ -104,7 +104,7 @@ class DeleteAccount {
         if (data && data.success) {
             user_id = data.user_id;
         } else {
-            log_sending_to_page(`Не вернулось значение функции checkUpdateTokens: ${data}`, "error");
+            console.error(`Не вернулось значение функции checkUpdateTokens: ${data}`);
             return;
         }
 

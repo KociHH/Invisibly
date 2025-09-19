@@ -16,7 +16,7 @@ class ConfirmPassword {
             const password = passwordInput.value;
 
             const urlParams = getUrlParams(["cause"]);
-            const cause = urlParams.get("cause");
+            const cause = decodeURIComponent(urlParams["cause"]);
 
             const response = await securedApiCall('/confirm_password', {
                 method: "POST",
@@ -31,7 +31,7 @@ class ConfirmPassword {
             if (response && response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    log_sending_to_page(`Пароль успешно подтвержден пользователем ${user_id}`, "log", `/${cause}?verify=true`)
+                    log_sending_to_page(`Пароль успешно подтвержден пользователем ${user_id}`, "log", `/${cause}?verify=${encodeURIComponent("true")}`)
                     return;
                 } else {
                     alert(data.message);
@@ -47,9 +47,9 @@ class ConfirmPassword {
     async init() {
         const data = await checkUpdateTokens()
 
-        if (data && data.succses) {
+        if (data && data.success) {
             const token = localStorage.getItem(ACCESS_TOKEN_KEY)
-            const user_id = data.get("user_id")
+            const user_id = data.user_id
             if (!token) {
                 log_sending_to_page("Токен истек, он не был обновлен через функцию checkUpdateTokens", "error")
                 return;

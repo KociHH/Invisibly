@@ -1,7 +1,22 @@
 import {log_sending_to_page} from "./utils/other.js";
 import {updateAccess, checkUpdateTokens, clearTokensAndRedirectLogin, ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY} from "./utils/secured.js";
 
-(() => {
+(async () => {
+    
+    if (localStorage.getItem(REFRESH_TOKEN_KEY)) {
+        const data = await checkUpdateTokens();
+        
+        if (data) {
+            window.location.href = "/profile";
+            return;
+
+        } else {
+            console.error("Вернулась функция с ошибкой checkUpdateTokens");
+            return;
+        }
+    }
+
+
     const form = document.getElementById('login-form') as HTMLFormElement;
 
     form.addEventListener('submit', async (e) => {
