@@ -5,7 +5,7 @@ import logging
 import uvicorn
 from app.backend.api import auth, root
 from app.backend.api.tools.security import tokens, validation
-from app.backend.api.user import profile, chats
+from app.backend.api.user import profile, chats, friends
 from app.backend.api.tools.helper import user
 from app.backend.api.user.settings import security, settings
 from config.env import UHOST, UPORT
@@ -66,6 +66,7 @@ app.include_router(root.router)
 app.include_router(tokens.router)
 app.include_router(validation.router)
 app.include_router(user.router)
+app.include_router(friends.router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)

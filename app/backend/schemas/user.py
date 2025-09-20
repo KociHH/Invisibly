@@ -27,3 +27,6 @@ class UserProfile(BaseModel):
 
 class SettingsExit(BaseModel):
     user_id: str | int
+
+class FriendAdd(BaseModel):
+    login: str

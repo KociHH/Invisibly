@@ -31,7 +31,7 @@ class UserRegistered(base):
     __tablename__ = 'userRegistered'
 
     user_id = Column(
-        BigInteger, 
+        Integer, 
         Sequence('user_id', start=1000, increment=1),
         primary_key=True, 
         )
@@ -57,7 +57,7 @@ class UserJWT(base):
     __tablename__ = 'userJWT'
 
     id = Column(BigInteger, primary_key=True)
-    user_id = Column(BigInteger, ForeignKey('userRegistered.user_id'), unique=False, nullable=False)
+    user_id = Column(Integer, ForeignKey('userRegistered.user_id'), unique=False, nullable=False)
     jti = Column(String, unique=True, nullable=False)
     issued_at = Column(DateTime, nullable=False)
     expires_at = Column(DateTime, nullable=False)
@@ -88,8 +88,34 @@ class FrozenAccounts(base):
     __tablename__ = 'frozenAccounts'
 
     id = Column(BigInteger, primary_key=True)
-    user_id = Column(BigInteger, ForeignKey("userRegistered.user_id"), unique=True)
+    user_id = Column(Integer, ForeignKey("userRegistered.user_id"), unique=True, nullable=False)
     frozen_at = Column(DateTime, nullable=False)
     delete_at = Column(DateTime, nullable=False)
 
     uid = relationship('UserRegistered')
+
+class FriendsUser(base):
+    """
+    user_id: int
+    friend_id: int
+    addition_number: int
+    """
+    __tablename__ = 'friendsUser'
+
+    id = Column(BigInteger, primary_key=True)
+    user_id = Column(Integer, ForeignKey("userRegistered.user_id"), unique=False, nullable=False)
+    friend_id = Column(Integer, ForeignKey("userRegistered.user_id"), nullable=False)
+    addition_number = Column(Integer, nullable=False)
+
+    uid = relationship('UserRegistered', foreign_keys=[user_id])
+
+class SendFriendRequests(base):
+
+    __tablename__ = 'sendFriendRequests'
+
+    id = Column(BigInteger, primary_key=True)
+    user_id = Column(Integer, ForeignKey("userRegistered.user_id"), unique=False, nullable=False)
+    request_user_id = Column(Integer, ForeignKey("userRegistered.user_id"), unique=False, nullable=False) 
+    send_at = Column(DateTime, nullable=False)
+
+    uid = relationship('UserRegistered', foreign_keys=[user_id])
