@@ -3,8 +3,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
-from app.routes import helper, security, settings
-from config.env import UHOST, UPORT
+from app.routes import profile, user_profile
+from config import UHOST, UPORT
 from fastapi.staticfiles import StaticFiles
 from app.db.sql.settings import engine
 from app.db.sql.tables import base
@@ -35,9 +35,8 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 app.add_middleware(SlowAPIMiddleware)
 
 app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
-app.include_router(security.router)
-app.include_router(settings.router)
-app.include_router(helper.router)
+app.include_router(profile.router)
+app.include_router(user_profile.router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)

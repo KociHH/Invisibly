@@ -1,6 +1,6 @@
 from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
 import logging
-from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, String, Integer, DateTime, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Index, String, Integer, DateTime, UniqueConstraint
 from typing import AsyncGenerator
 from datetime import datetime
 

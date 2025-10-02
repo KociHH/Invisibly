@@ -1,6 +1,3 @@
-# FriendsUser
-# rabbit
-
 from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.params import Query
@@ -8,7 +5,7 @@ from fastapi.responses import HTMLResponse
 import logging
 from sqlalchemy import and_
 from app.crud.user import UserProcess
-from config.variables import path_html
+from shared.config.variables import path_html
 from fastapi import Depends
 from app.crud.dependencies import  template_not_found_user, get_current_user_id
 from jose import jwt

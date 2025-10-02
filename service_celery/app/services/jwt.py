@@ -1,7 +1,7 @@
 from dotenv import set_key, find_dotenv
 import secrets
 import logging
-from config.env import SECRET_KEY, SECRET_KEY_SIZE
+from config import SECRET_KEY, SECRET_KEY_SIZE
 logger = logging.getLogger(__name__)
 
 def generate_jwt_secretkey(recording_env: bool = False, env_path: str = ".env") -> None | str:

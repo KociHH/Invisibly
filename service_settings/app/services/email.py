@@ -8,8 +8,8 @@ from email.message import EmailMessage
 import random
 from app.crud.user import RedisJsonsProcess
 from app.services.jwt import create_token
-from config.env import SMTP_EMAIL, SMTP_HOST, SMTP_PASS, SMTP_PORT
-from config.variables import curretly_msk
+from config import SMTP_EMAIL, SMTP_HOST, SMTP_PASS, SMTP_PORT
+from shared.config.variables import curretly_msk
 
 
 logger = logging.getLogger(__name__)

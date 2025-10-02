@@ -4,7 +4,7 @@ import logging
 from aio_pika import connect_robust, IncomingMessage, Message
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from config.env import RABBITMQ_URL
+from config import RABBITMQ_URL
 from app.db.sql.settings import get_db_session
 from app.crud.user import UserProcess
 from shared.services.rebbitmq.variables import FreeMQ

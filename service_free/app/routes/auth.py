@@ -8,12 +8,11 @@ from service_free.app.db.sql.tables import UserRegistered
 from service_free.app.db.sql.settings import get_db_session
 from app.services.http_client import _http_client
 from app.crud.user import EncryptEmailProcess
-from config.variables import curretly_msk
+from shared.config.variables import curretly_msk, path_html, PSWD_context
 from app.services.jwt import create_token
-from config.env import REFRESH_TOKEN_LIFETIME_DAYS
+from config import REFRESH_TOKEN_LIFETIME_DAYS
 from app.schemas.auth import UserRegister, UserLogin
 from app.schemas.response_model import AuthResponse
-from config.variables import path_html, PSWD_context
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

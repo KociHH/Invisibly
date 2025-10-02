@@ -4,7 +4,6 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy import BaseDAO
 from app.db.sql.tables import UserJWT
-from config.variables import curretly_msk
 import logging
 from shared.crud.redis.create import RedisJsons
 from shared.data.redis.instance import __redis_save_sql_call__
@@ -12,8 +11,8 @@ import smtplib
 from email.message import EmailMessage
 import random
 from typing import Any
-from config.env import REFRESH_TOKEN_LIFETIME_DAYS, SMTP_EMAIL, SMTP_HOST, SMTP_PASS, SMTP_PORT
-from config.variables import curretly_msk
+from config import REFRESH_TOKEN_LIFETIME_DAYS, SMTP_EMAIL, SMTP_HOST, SMTP_PASS, SMTP_PORT
+from shared.config.variables import curretly_msk
 from shared.crud.sql.user import UserCRUD
 from app.services.http_client import _http_client
 

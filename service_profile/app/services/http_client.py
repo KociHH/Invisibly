@@ -3,7 +3,7 @@ from typing import Any, Callable, Coroutine
 import logging
 from shared.services.http_client.service_free import ServiceFreeHttpClient
 from shared.services.http_client.service_friends import ServiceFriendsHttpClient
-from config.env import HTTP_URL
+from config import HTTP_URL
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from app.db.sql.tables import UserRegistered
 import hashlib
 import logging
 from shared.crud.sql.user import UserCRUD, EncryptEmail
-from config.variables import curretly_msk
+from shared.config.variables import curretly_msk
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ import logging
 from sqlalchemy import and_
 from fastapi import Depends
 from app.crud.user import UserProcess, RedisJsonsProcess
-from config.variables import path_html
+from shared.config.variables import path_html
 from app.crud.dependencies import  get_current_user_id
 from jose import jwt
 from shared.data.redis.instance import __redis_save_sql_call__

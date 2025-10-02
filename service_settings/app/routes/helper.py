@@ -9,7 +9,7 @@ from app.crud.dependencies import template_not_found_user, get_current_user_id
 from app.schemas.change import ChangeEmail, SendPassword
 from app.schemas.system import SendEmail
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
-from config.variables import curretly_msk
+from shared.config.variables import curretly_msk
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.services.http_client import _http_client
 

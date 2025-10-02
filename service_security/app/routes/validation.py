@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 import logging
 import uuid
 from fastapi import Depends
-from config.variables import path_html, PSWD_context
+from shared.config.variables import path_html, PSWD_context, curretly_msk
 from app.crud.user import UserProcess
 from app.crud.dependencies import template_not_found_user, get_current_user_id
 from service_security.app.schemas.code import ResendCode, SendCode
@@ -14,7 +14,6 @@ from app.services.jwt import decode_jwt_token, create_token
 from datetime import timedelta
 from app.crud.user import RedisJsonsProcess
 from shared.data.redis.instance import __redis_save_jwt_token__
-from config.variables import curretly_msk
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

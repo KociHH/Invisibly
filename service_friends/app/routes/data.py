@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from config.variables import path_html, PSWD_context
+from shared.config.variables import path_html, PSWD_context
 from app.crud.user import UserProcess
 from app.crud.dependencies import get_current_user_id
 from app.db.sql.settings import get_db_session

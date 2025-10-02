@@ -8,7 +8,7 @@ from shared.crud.sql.user import UserCRUD
 from shared.crud.sql.user import EncryptEmail
 from shared.crud.redis.create import RedisJsons
 from shared.data.redis.instance import __redis_save_jwt_token__
-from config.variables import curretly_msk
+from shared.config.variables import curretly_msk
 import logging
 from app.services.http_client import _http_client
 

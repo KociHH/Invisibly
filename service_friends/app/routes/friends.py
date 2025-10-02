@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 import logging
 from sqlalchemy import and_
 from fastapi import Depends
-from config.variables import path_html
+from shared.config.variables import path_html, curretly_msk
 from app.crud.dependencies import get_current_user_id
 from app.services.http_client import _http_client
 from shared.data.redis.instance import __redis_save_sql_call__
@@ -14,7 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.db.sql.settings import get_db_session
 from app.db.sql.tables import FriendsUser, SendFriendRequests
-from config.variables import curretly_msk
 from app.crud.user import RedisJsonsProcess, UserProcess
 from app.services.rabbitmq.client import rpc_client
 

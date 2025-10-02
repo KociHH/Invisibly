@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 import uuid
 from jose import jwt, exceptions
 from fastapi import HTTPException, status
-from config.env import SECRET_KEY, REFRESH_TOKEN_LIFETIME_DAYS, ACCESS_TOKEN_LIFETIME_MINUTES
-from config.variables import curretly_msk
-from config.env import ALGORITHM
+from config import SECRET_KEY, REFRESH_TOKEN_LIFETIME_DAYS, ACCESS_TOKEN_LIFETIME_MINUTES
+from shared.config.variables import curretly_msk
+from config import ALGORITHM
 import logging
 
 logger = logging.getLogger(__name__)

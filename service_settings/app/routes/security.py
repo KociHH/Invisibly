@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.services.email import EmailProcess
 from app.crud.user import EncryptEmailProcess, UserProcess, RedisJsonsProcess
-from config.variables import curretly_msk, path_html, PSWD_context
+from shared.config.variables import curretly_msk, path_html, PSWD_context
 from app.services.http_client import _http_client
 from app.db.sql.tables import FrozenAccounts
 

@@ -11,6 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.org/simple
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE 8007
 
 CMD ["python", "main.py"]
