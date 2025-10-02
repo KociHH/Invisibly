@@ -10,7 +10,8 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.org/simple
 
 COPY . .
+COPY shared/ /app/shared/
 
-EXPOSE 8002
+EXPOSE 8004
 
-CMD ["python", "main.py"]
+CMD ["sh", "-c", "cd app && python main.py"]

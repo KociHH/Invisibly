@@ -7,5 +7,3 @@ def curretly_msk():
 path_html = "service_frontend/app/src/html/"
 
 PSWD_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
-
-http_localhost = "http://127.0.0.1:8000"

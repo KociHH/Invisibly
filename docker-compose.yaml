@@ -1,0 +1,97 @@
+services:
+
+    service_admin:
+      build: ./service_admin
+      context: .
+      dockerfile: service_admin/Dockerfile
+      ports: 
+      - "8001:8001"
+    
+
+    service_celery:
+      build: ./service_celery
+      context: .
+      dockerfile: service_celery/Dockerfile
+
+      ports: 
+      - "8002:8002"
+      env_file:
+      - ".env"
+
+
+    service_chat:
+      build:
+      context: .
+      dockerfile: service_chat/Dockerfile
+      
+      ports: 
+      - "8003:8003"
+      env_file:
+      - ".env"
+
+
+    service_free:
+      build:
+      context: .
+      dockerfile: service_free/Dockerfile
+
+      ports: 
+      - "8004:8004"
+      env_file:
+      - ".env"
+
+
+    service_friends:
+      build:
+      context: .
+      dockerfile: service_friends/Dockerfile
+
+      ports: 
+      - "8005:8005"
+      env_file:
+      - ".env"
+
+
+    service_notifications:
+      build:
+      context: .
+      dockerfile: service_notifications/Dockerfile
+      
+      ports: 
+      - "8006:8006"
+      env_file:
+      - ".env"
+
+
+    service_profile:
+      build:
+      context: .
+      dockerfile: service_profile/Dockerfile
+      
+      ports: 
+      - "8007:8007"
+      env_file:
+      - ".env"
+
+
+    service_security:
+      build:
+      context: .
+      dockerfile: service_security/Dockerfile
+      
+      ports: 
+      - "8008:8008"
+      env_file:
+      - ".env"
+
+
+    service_settings:
+      build:
+      context: .
+      dockerfile: service_settings/Dockerfile
+      
+      ports: 
+      - "8009:8009"
+      env_file:
+      - ".env"
+

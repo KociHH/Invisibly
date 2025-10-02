@@ -5,12 +5,13 @@ WORKDIR /app
 
 RUN pip install --upgrade pip
 
-COPY requirements.txt /app/
+COPY service_admin/requirements.txt /app/requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.org/simple
+RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements.txt -i https://pypi.org/simple
 
-COPY . .
+COPY shared/ /app/shared/
+COPY service_admin/ /app/
 
-EXPOSE 8000
+EXPOSE 8001
 
-CMD ["python", "main.py"]
+CMD ["sh", "-c", "cd app && python main.py"]

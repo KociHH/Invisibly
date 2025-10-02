@@ -4,7 +4,7 @@ from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
 from app.routes import admin
-from config.env import UHOST, UPORT
+from config import UHOST, UPORT
 from fastapi.staticfiles import StaticFiles
 from app.db.sql.settings import engine
 from app.db.sql.tables import base

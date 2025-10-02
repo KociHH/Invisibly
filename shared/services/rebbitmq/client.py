@@ -4,7 +4,6 @@ import uuid
 from aio_pika import connect_robust, Message, IncomingMessage, ExchangeType
 import logging
 from shared.services.rebbitmq.variables import FreeMQ
-from config.env import RABBITMQ_URL
 
 logger = logging.getLogger(__name__)
 

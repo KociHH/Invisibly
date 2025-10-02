@@ -2,20 +2,18 @@ from fastapi import HTTPException
 import httpx
 from typing import Any, Callable, Coroutine
 import logging
-from config.variables import http_localhost
 from shared.services.http_client.variables import error_handler_wrapper
-from config.env import load_from_env
 import os
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
-load_from_env()
+load_dotenv()
 
-service_free_base_url = os.getenv("SERVICE_FREE_BASE_URL") or http_localhost
 
 class ServiceFreeHttpClient:
-    def __init__(self):
-        self.base_url = service_free_base_url
+    def __init__(self, free_url: str):
+        self.base_url = free_url
 
     @error_handler_wrapper
     async def _perform_request(self, method: str, path: str, payload: dict | None = None) -> dict:
