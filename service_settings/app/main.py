@@ -38,6 +38,3 @@ app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static
 app.include_router(security.router)
 app.include_router(settings.router)
 app.include_router(helper.router)
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)

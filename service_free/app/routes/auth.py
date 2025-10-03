@@ -18,14 +18,11 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # register
-@router.get("/register", response_class=HTMLResponse)
-async def register_page():
-    with open(path_html + "register.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
-
 @router.post("/register", response_model=AuthResponse)
-async def register(user: UserRegister, db_session: AsyncSession = Depends(get_db_session)):
+async def register(
+    user: UserRegister, 
+    db_session: AsyncSession = Depends(get_db_session)
+    ):
     registerb = BaseDAO(UserRegistered, db_session)
     db_login = await registerb.get_one(UserRegistered.login == "@" + user.login)
     if db_login:
@@ -76,12 +73,6 @@ async def register(user: UserRegister, db_session: AsyncSession = Depends(get_db
         }
 
 # login
-@router.get("/login", response_class=HTMLResponse)
-async def login_page():
-    with open(path_html + "login.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
-    
 @router.post("/login", response_model=AuthResponse)
 async def login(user: UserLogin, db_session: AsyncSession = Depends(get_db_session)):
     loginb = BaseDAO(UserRegistered, db_session)
@@ -112,7 +103,7 @@ async def login(user: UserLogin, db_session: AsyncSession = Depends(get_db_sessi
     )
     return {
         "success": True, 
-        "message": "Успешный вход в систему",
+        "message": "Success login",
         "access_token": access_token, 
         "refresh_token": refresh_token, 
         "token_type": "bearer"

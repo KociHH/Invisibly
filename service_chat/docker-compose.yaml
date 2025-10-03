@@ -1,0 +1,10 @@
+services:
+  service_chat:
+    build:
+      context: ..
+      dockerfile: service_chat/Dockerfile
+    
+    ports: 
+      - "8003:8003"
+    env_file:
+      - "../.env"

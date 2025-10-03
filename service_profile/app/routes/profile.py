@@ -21,17 +21,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # profile
-@router.get("/profile", response_class=HTMLResponse)
-async def user_profile():
-    with open(path_html + "user/profile.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    
-    html_content = html_content.replace("{{full_name}}", "")
-    html_content = html_content.replace("{{login}}", "")
-    html_content = html_content.replace("{{bio_content}}", "")
-
-    return HTMLResponse(content=html_content)
-
 @router.get("/profile/data", response_model=UserProfile)
 async def user_profile_data(user_info: UserProcess = Depends(get_current_user_id)):
     user_id = user_info.user_id
@@ -51,18 +40,6 @@ async def user_profile_data(user_info: UserProcess = Depends(get_current_user_id
     }
 
 # edit profile
-@router.get("/edit_profile", response_class=HTMLResponse)
-async def user_edit_profile():
-    with open(path_html + "user/edit_profile.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    
-    html_content = html_content.replace("{{name}}", "")
-    html_content = html_content.replace("{{surname}}", "")
-    html_content = html_content.replace("{{login}}", "")
-    html_content = html_content.replace("{{bio_content}}", "")
-
-    return HTMLResponse(content=html_content)
-
 @router.get("/edit_profile/data")
 async def user_edit_profile_data(user_info: UserProcess = Depends(get_current_user_id)):
     user_id = user_info.user_id

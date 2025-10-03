@@ -17,11 +17,6 @@ from service_notifications.app.db.sql.tables import NotificationSystem, Notifica
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.get("/notifications/friends", response_class=HTMLResponse)
-async def notifications_friends():
-    with open(path_html + "user/notifications/friends.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
 
 @router.get("/notifications/friends/data")
 async def notifications_friends_data(

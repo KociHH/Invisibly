@@ -1,7 +1,3 @@
-# FrozenAccounts
-# UserRegistered
-# rabbit
-
 from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, HTTPException, Request
@@ -19,7 +15,7 @@ from service_security.app.schemas.response_model import EmailSendVerify
 from shared.schemas.response_model import SuccessMessageAnswer, SuccessAnswer
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
-from app.services.email import EmailProcess
+from app.services.rabbitmq.client import EmailRpcClient
 from app.crud.user import EncryptEmailProcess, UserProcess, RedisJsonsProcess
 from shared.config.variables import curretly_msk, path_html, PSWD_context
 from app.services.http_client import _http_client
@@ -70,7 +66,9 @@ async def processing_email(
     if cef.user_id != current_user_id:
         raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
     
-    rjp = RedisJsonsProcess(current_user_id, "change_email")
+    handle_cause = "change_email"
+
+    rjp = RedisJsonsProcess(current_user_id, handle_cause)
     ee = EncryptEmailProcess(user_info.db_session)
 
     tokens: dict | None = __redis_save_jwt_token__.get_cached()
@@ -89,9 +87,9 @@ async def processing_email(
             logger.error("Функция delete_token завершилась с ошибкой")
             raise HTTPException(status_code=500, detail="Server error")
 
-    ep = EmailProcess(cef.email)
+    ep = EmailRpcClient(cef.email)
     try:
-        result = ep.send_change_email(rjp, current_user_id, "change_email")
+        result = ep.send_change_email(current_user_id, handle_cause, current_user_id, handle_cause)
         return result
             
     except Exception as e:

@@ -1,0 +1,8 @@
+services:    
+  service_frontend:
+    build:
+      context: .
+      dockerfile: service_frontend/Dockerfile
+
+    ports:
+    - "8080:80"

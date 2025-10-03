@@ -1,0 +1,10 @@
+services:
+  service_settings:
+    build:
+      context: ..
+      dockerfile: service_settings/Dockerfile
+    
+    ports: 
+      - "8009:8009"
+    env_file:
+      - "../.env"

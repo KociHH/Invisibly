@@ -9,7 +9,7 @@ from app.crud.user import UserProcess
 from app.crud.dependencies import template_not_found_user, get_current_user_id
 from service_security.app.schemas.code import ResendCode, SendCode
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
-from app.crud.user import EmailProcess
+from app.services.rabbitmq.client import EmailRpcClient
 from app.services.jwt import decode_jwt_token, create_token
 from datetime import timedelta
 from app.crud.user import RedisJsonsProcess
@@ -19,17 +19,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # email code
-@router.get("/confirm_code", response_class=HTMLResponse)
-async def confirm_code():
-    with open(path_html + "confirm_code.html", "r", encoding="utf-8") as html_file:
-        html_content = html_file.read()
-
-    html_content = html_content.replace("{{email}}", "")
-    html_content = html_content.replace("{{life_time}}", "")
-    html_content = html_content.replace("{{life_time_repeated_code}}", "")
-
-    return HTMLResponse(content=html_content)
-
 @router.get("/confirm_code/data")
 # 1. /confirm_code?cause=... 2. /confirm_code?cause=...&resend=...?
 async def confirm_code_data(
@@ -112,9 +101,9 @@ async def confirm_code_data(
             raise HTTPException(status_code=500, detail="System error")
     # если повторная отправка
     if send_code:
-        ep = EmailProcess(new_email)
+        ep = EmailRpcClient(new_email)
         try:
-            return_data = ep.send_change_email(rjp, user_info.user_id, "confirm_code")
+            return_data = ep.send_change_email(user_info.user_id, cause, user_info.user_id, "confirm_code")
 
         except Exception as e:
             logger.error(f"Ошибка в функции send_change_email: {e}")
@@ -144,13 +133,6 @@ async def check_code(
     }
 
 # password
-@router.get("/confirm_password", response_class=HTMLResponse)
-async def confirm_password():
-    with open(path_html + "confirm_password.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    return HTMLResponse(html_content)
-
 @router.post("/confirm_password", response_model=SuccessMessageAnswer)
 async def processing_password(
     sp: {},

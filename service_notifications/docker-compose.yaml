@@ -1,0 +1,10 @@
+services:
+  service_notifications:
+    build:
+      context: ..
+      dockerfile: service_notifications/Dockerfile
+    
+    ports: 
+      - "8006:8006"
+    env_file:
+      - "../.env"

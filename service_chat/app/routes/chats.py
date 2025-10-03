@@ -14,11 +14,6 @@ from service_chat.app.crud.user import ChatsProcess
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.get("/chats", response_class=HTMLResponse)
-async def user_chats():
-    with open(path_html + "user/chats.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
 
 @router.get("/chats/data")
 async def user_chats_data(

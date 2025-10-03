@@ -8,7 +8,6 @@ from service_friends.app.db.sql.tables import FriendsUser, SendFriendRequests
 from shared.services.tools.other import full_name_constructor
 import logging
 from shared.crud.sql.user import UserCRUD
-from app.services.rabbitmq.client import rpc_client
 from app.services.http_client import _http_client
 
 logger = logging.getLogger(__name__)

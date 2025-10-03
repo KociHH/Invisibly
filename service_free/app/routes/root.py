@@ -7,7 +7,7 @@ from app.crud.user import GetUserInfo
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/")
 async def root_page(request: Request):
     gui = GetUserInfo(request)
     device_inf: dict = gui.get_device_type()
@@ -29,6 +29,4 @@ async def root_page(request: Request):
     }
     logger.info(f'user_info: {user_info}')
 
-    with open(path_html + "root.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
+    return user_info

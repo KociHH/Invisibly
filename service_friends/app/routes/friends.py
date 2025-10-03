@@ -15,16 +15,9 @@ from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.db.sql.settings import get_db_session
 from app.db.sql.tables import FriendsUser, SendFriendRequests
 from app.crud.user import RedisJsonsProcess, UserProcess
-from app.services.rabbitmq.client import rpc_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-@router.get("/friends", response_class=HTMLResponse)
-async def user_friends():
-    with open(path_html + "user/friends/friends.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
 
 @router.get("/friends/data", response_model=SuccessAnswer)
 async def user_friends_data(

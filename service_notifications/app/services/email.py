@@ -104,12 +104,14 @@ class EmailProcess:
 
     def send_change_email(
         self,
-        rjp: RedisJsonsProcess, 
+        user_id_rjp: int | str,
+        handle: str,
         user_id: int | str,
         api_type: str
         ):
         """
-        rjp: Объект RedisJsonsProcess
+        user_id_rjp: аргумент user_id в RedisJsonsProcess
+        handle: аргумент handle в RedisJsonsProcess
         user_id: user_id для сохранения в токен
         api_type: (
                 тип запроса, от него зависит возвращаемые данные;
@@ -136,6 +138,7 @@ class EmailProcess:
         result_send = self.send_code_email("для подтверждения почты.")
         logger.info(result_send)
         
+        rjp = RedisJsonsProcess(user_id_rjp, handle)
         if result_send:
             success = result_send.get("success")
             error = result_send.get("error")

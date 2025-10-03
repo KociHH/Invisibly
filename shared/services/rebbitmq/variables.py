@@ -1,4 +1,5 @@
-class FreeMQ:
+class NotificationsMQ:
     key = "free_data_rpc_queue"
-    action_get_user_info = "get_user_info"
-    action_find_user_by_param = "find_user_by_parameters"
+
+    action_send_code_email_to_user = "send_code_email_to_user"
+    action_send_change_email_user = "send_change_email_user"

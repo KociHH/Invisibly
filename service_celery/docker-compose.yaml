@@ -1,0 +1,10 @@
+services:
+  service_celery:
+    build:
+      context: ..
+      dockerfile: service_celery/Dockerfile
+
+    ports: 
+      - "8002:8002"
+    env_file:
+      - "../.env"

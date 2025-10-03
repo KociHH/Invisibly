@@ -37,6 +37,3 @@ app.add_middleware(SlowAPIMiddleware)
 app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
 app.include_router(friends.router)
 app.include_router(data.router)
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)

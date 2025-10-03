@@ -2,7 +2,7 @@ from fastapi import HTTPException
 import httpx
 from typing import Any, Callable, Coroutine
 import logging
-from config.variables import http_localhosfrom shared.services.http_client.variables import error_handler_wrapper
+from shared.services.http_client.variables import error_handler_wrapper
 from dotenv import load_dotenv
 import os
 

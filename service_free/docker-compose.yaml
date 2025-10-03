@@ -1,0 +1,10 @@
+services:
+  service_free:
+    build:
+      context: ..
+      dockerfile: service_free/Dockerfile
+
+    ports: 
+      - "8004:8004"
+    env_file:
+      - "../.env"

@@ -1,12 +1,24 @@
 services:
 
+    service_frontend:
+      build:
+      context: .
+      dockerfile: service_frontend/Dockerfile
+
+      ports:
+      - "8080:80"
+
+
     service_admin:
       build: ./service_admin
       context: .
       dockerfile: service_admin/Dockerfile
+      
       ports: 
       - "8001:8001"
-    
+      env_file:
+      - ".env"
+
 
     service_celery:
       build: ./service_celery

@@ -20,12 +20,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/user/profile", response_class=HTMLResponse)
-async def friend_profile():
-    with open(path_html + "user/friends/friends_add.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
-
 @router.get("/user/profile/data")
 async def friend_profile_data(
     profile_id: str = Query(..., description='id профиля пользователя'),

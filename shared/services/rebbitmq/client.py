@@ -3,7 +3,7 @@ import json
 import uuid
 from aio_pika import connect_robust, Message, IncomingMessage, ExchangeType
 import logging
-from shared.services.rebbitmq.variables import FreeMQ
+from shared.services.rebbitmq.variables import NotificationsMQ
 
 logger = logging.getLogger(__name__)
 
@@ -50,85 +50,44 @@ class PublicRpcClient:
             logger.info(f"{__class__.__name__} connection closed.")
 
 
-class PublicUserRpcClient(PublicRpcClient):
-    def __init__(self, urlMQ: str):
+class PublicEmailRpcClient(PublicRpcClient):
+    def __init__(self, email: str, urlMQ: str):
         super().__init__(urlMQ)
+        self.email = email
 
-    async def get_user_info(
-        self, 
-        user_id: int, 
-        fields: list[str] | None = None,
+    async def send_email_to_user(
+        self,
+        user_id: int | str,
+        cause: str,
+        size_code: int = 6
         ) -> dict:
         await self.connect() 
 
-        request_id = str(uuid.uuid4())
-        future = self.loop.create_future()
-        self.futures[request_id] = future
+        correlation_id = str(uuid.uuid4())
+        furure = self.loop.create_future()
+        self.futures[correlation_id] = furure
 
-        request_body = {
-            "user_id": user_id, 
-            "action": FreeMQ.action_get_user_info
-            }
-        if fields:
-            request_body["fields"] = fields
-
-        message = Message(
-            body=json.dumps(request_body).encode(),
-            content_type="application/json",
-            correlation_id=request_id,
-            reply_to=self.callback_queue.name,
-        )
-
-        await self.channel.default_exchange.publish(
-            message,
-            routing_key=FreeMQ.key,
-        )
-
-        try:
-            response = await asyncio.wait_for(future, 10) 
-            return response
-        except asyncio.TimeoutError:
-            return self.clear_log_timeout(request_id, user_id)
-        except Exception as e:
-            logger.error(f"Error call to service_free: {e}")
-            return {"error": f"RPC call failed: {e}"}
-
-    async def find_user_by_param(
-        self,
-        user_id: int | str, 
-        param_name: str,
-        param_value: str
-        ):
-        await self.connect()
-
-        request_id = (uuid.uuid4())
-        future = self.loop.create_future()
-        self.futures[request_id] = future
-
-        request_body = {
+        payload = {
             "user_id": user_id,
-            "action": FreeMQ.action_find_user_by_param,
-            "param_name": param_name,
-            "param_value": param_value,
+            "email": self.email,
+            "cause": cause,
+            "size_code": size_code
         }
 
         message = Message(
-            json.dumps(request_body).encode(),
+            body=json.dumps(payload).encode(),
             content_type="application/json",
-            correlation_id=request_id,
+            correlation_id=correlation_id,
             reply_to=self.callback_queue.name,
         )
 
         await self.channel.default_exchange.publish(
             message,
-            routing_key=FreeMQ.key
-        )
+            routing_key=NotificationsMQ.key
+            )
 
         try:
-            response = await asyncio.wait_for(future, 10)
-            return response
-        except asyncio.TimeoutError:
-            self.clear_log_timeout(request_id, user_id)
-        except Exception as e:
-            logger.error(f"Error call to service_free: {user_id}")
-            return {"error": f"RCP call failed {e}"}
+            result = await asyncio.wait_for(furure, timeout=10)
+            return result
+        finally:
+            self.futures.pop(correlation_id, None)
