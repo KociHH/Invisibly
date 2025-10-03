@@ -14,4 +14,4 @@ COPY service_celery/ /app/
 
 EXPOSE 8002
 
-CMD ["sh", "-c", "cd app && python main.py"]
+CMD ["sh", "-c", "cd app && uvicorn main:app --host 0.0.0.0 --port 8002"]

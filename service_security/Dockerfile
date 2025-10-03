@@ -12,6 +12,6 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements
 COPY shared/ /app/shared/
 COPY service_security/ /app/
 
-EXPOSE 8007
+EXPOSE 8008
 
-CMD ["sh", "-c", "cd app && python main.py"]
+CMD ["sh", "-c", "cd app && uvicorn main:app --host 0.0.0.0 --port 8008"]
