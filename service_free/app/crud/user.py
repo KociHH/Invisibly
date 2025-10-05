@@ -128,7 +128,7 @@ class EncryptEmailProcess(EncryptEmail):
 
     async def email_verification(self, db_session: AsyncSession, except_uid: int | str | None = None):
         user_dao = BaseDAO(UserRegistered, db_session)
-        email_hash = self.hash_email(self.email)
+        email_hash = self.hash_email()
 
         db_email_hash = await user_dao.get_one(
             and_(UserRegistered.email_hash == email_hash, UserRegistered.user_id != except_uid))

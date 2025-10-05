@@ -2,19 +2,22 @@ FROM node:18-alpine as build
 
 WORKDIR /app
 
-COPY app/package*.json ./
+COPY service_frontend/app/package*.json ./
 
 RUN npm ci
 
-COPY app .
+COPY service_frontend/app .
 
 RUN npm run build
 
 # nginx
 FROM nginx:alpine
 
-COPY app/nginx.conf /etc/nginx/conf.d/default.conf
+COPY service_frontend/app/nginx.conf.template /etc/nginx/templates/default.conf.template
 
-COPY --from=build /app/dist /usr/share/nginx/html
+RUN rm -rf /usr/share/nginx/html/*
+COPY --from=build /app/src/html/ /usr/share/nginx/html/
+COPY --from=build /app/dist/ts/ /usr/share/nginx/html/js/
+COPY --from=build /app/src/css/ /usr/share/nginx/html/css/
 
 EXPOSE 80

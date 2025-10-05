@@ -2,7 +2,6 @@ from jose import jwt
 from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 import logging
-from config.env import SECRET_KEY, ALGORITHM
 from fastapi.responses import JSONResponse
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
@@ -14,7 +13,7 @@ class MiddlewareProcess:
     def __init__(self, request: Request) -> None:
         self.request = request
 
-    async def access_token_middleware(self, call_next, excluded_paths: list):
+    async def access_token_middleware(self, call_next, excluded_paths: list, SECRET_KEY: str, ALGORITHM: str):
         excluded_paths += ["/login", "/register", '/']
         public_paths = excluded_paths
         if any(self.request.url.path.startswith(p) for p in public_paths):

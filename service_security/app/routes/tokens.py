@@ -2,7 +2,7 @@ from app.db.sql.tables import UserJWT
 from fastapi import APIRouter, HTTPException
 import logging
 from app.services.jwt import verify_refresh_token, create_token
-from service_security.app.db.sql.settings import get_db_session
+from app.db.sql.settings import get_db_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.crud.user import CreateTable, UserProcess, RedisJsonsProcess

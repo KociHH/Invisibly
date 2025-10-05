@@ -1,0 +1,16 @@
+services:
+  service_celery_worker:
+    build:
+      context: .
+      dockerfile: service_celery/Dockerfile
+    env_file:
+      - ".env"
+
+  service_celery_beat:
+    build:
+      context: .
+      dockerfile: service_celery/Dockerfile
+    command: ["sh", "-c", "cd app && celery -A celery.app beat --loglevel=info"]
+    env_file:
+      - ".env"
+

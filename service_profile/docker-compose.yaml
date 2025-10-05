@@ -5,6 +5,6 @@ services:
       dockerfile: service_profile/Dockerfile
     
     ports: 
-      - "8007:8007"
+      - "${SERVICE_PROFILE_PORT}:${SERVICE_PROFILE_PORT}"
     env_file:
       - "../.env"

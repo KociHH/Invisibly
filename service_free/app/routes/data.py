@@ -7,7 +7,7 @@ from shared.config.variables import path_html, PSWD_context
 from app.crud.user import UserProcess
 from app.crud.dependencies import get_current_user_id
 from app.db.sql.settings import get_db_session
-from service_free.app.schemas.data import UserFilter, UserFullInfo, UserUpdate
+from app.schemas.data import UserFilter, UserFullInfo, UserUpdate
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

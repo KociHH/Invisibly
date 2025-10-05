@@ -1,5 +1,4 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from config import POSTGRES_URL
 from sqlalchemy import Index, create_engine, select, pool, Sequence
 from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
 import logging

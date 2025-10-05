@@ -12,6 +12,4 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements
 COPY shared/ /app/shared/
 COPY service_celery/ /app/
 
-EXPOSE 8002
-
-CMD ["sh", "-c", "cd app && uvicorn main:app --host 0.0.0.0 --port 8002"]
+CMD ["sh", "-c", "cd app && alembic upgrade head && celery -A celery.app worker --loglevel=info"]

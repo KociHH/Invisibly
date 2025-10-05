@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 
 # profile
 @router.get("/profile/data", response_model=UserProfile)
-async def user_profile_data(user_info: UserProcess = Depends(get_current_user_id)):
+async def user_profile_data(
+    user_info: UserProcess = Depends(get_current_user_id)
+    ):
     user_id = user_info.user_id
     rjp = RedisJsonsProcess(user_id, "UserRegistered")
     obj: dict = await rjp.get_or_cache_user_info(user_info)

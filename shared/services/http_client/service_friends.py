@@ -1,36 +1,22 @@
-from fastapi import HTTPException
-import httpx
-from typing import Any, Callable, Coroutine
-import logging
-from shared.services.http_client.variables import error_handler_wrapper
-import os
-from dotenv import load_dotenv
-
-logger = logging.getLogger(__name__)
-
-load_dotenv()
+from typing import Any
+from shared.services.http_client.variables import PublicHttpClient
 
 
-class ServiceFriendsHttpClient:
+class ServiceFriendsHttpClient(PublicHttpClient):
     def __init__(self, friends_url: str):
-        self.base_url = friends_url
-
-    @error_handler_wrapper
-    async def _perform_request(self, method: str, path: str, payload: dict | None = None) -> dict:
-        async with httpx.AsyncClient(base_url=self.base_url) as client:
-            if method == "POST":
-                response = await client.post(path, json=payload)
-            elif method == "GET":
-                response = await client.get(path, params=payload)
-            elif method == "PATCH":
-                response = await client.patch(path, json=payload)
-            else:
-                raise ValueError(f"Unsupported HTTP method: {method}")
-            
-            response.raise_for_status()
-            return response.json()
+        super().__init__(friends_url)
 
     async def find_friend_by_param(self, param_name: str, param_value: Any) -> dict:
         path = "/find_user_by_param"
         payload = {"param_name": param_name, "param_value": param_value}
+        return await self._perform_request("GET", path, payload)
+
+    async def friends_requests_info(self, user_id: str | int, fields: list[str] | None):
+        path = "/friends_requests_info"
+        payload = {"user_id": user_id, "fields": fields}
+        return await self._perform_request("GET", path, payload)
+
+    async def get_or_cache_friends(self, user_id: str | int, handle: str, sort_reverse: bool):
+        path = "/get_or_cache_friends"
+        payload = {"user_id": user_id, "handle": handle, "sort_reverse": sort_reverse}
         return await self._perform_request("GET", path, payload)

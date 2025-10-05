@@ -5,6 +5,6 @@ services:
       dockerfile: service_notifications/Dockerfile
     
     ports: 
-      - "8006:8006"
+      - "${SERVICE_NOTIFICATIONS_PORT}:${SERVICE_NOTIFICATIONS_PORT}"
     env_file:
       - "../.env"

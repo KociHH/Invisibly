@@ -7,7 +7,7 @@ from fastapi import Depends
 from shared.config.variables import path_html, PSWD_context, curretly_msk
 from app.crud.user import UserProcess
 from app.crud.dependencies import template_not_found_user, get_current_user_id
-from service_security.app.schemas.code import ResendCode, SendCode
+from app.schemas.code import ResendCode, SendCode
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
 from app.services.rabbitmq.client import EmailRpcClient
 from app.services.jwt import decode_jwt_token, create_token
@@ -135,7 +135,7 @@ async def check_code(
 # password
 @router.post("/confirm_password", response_model=SuccessMessageAnswer)
 async def processing_password(
-    sp: {},
+    sp: dict,
     user_info: UserProcess = Depends(get_current_user_id),
 ): 
     data_token = decode_jwt_token(sp.token)

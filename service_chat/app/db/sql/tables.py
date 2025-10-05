@@ -26,6 +26,7 @@ class UserChat(base):
 
     uid = relationship("UserRegistered", foreign_keys=[user1_id, user2_id])
     messages = relationship(
+        "Message",
         back_populates="userChats", 
         cascade="all, delete-orphan"
     )
@@ -49,5 +50,5 @@ class Message(base):
     chat = relationship("UserChat", back_populates="messages")
     uid = relationship("UserRegistered")
     __table_args__ = (
-        Index('ix_messages_chat_created', 'chat_id', 'created_at'),
+        Index('ix_messages_chat_send', 'chat_id', 'send_at'),
     )

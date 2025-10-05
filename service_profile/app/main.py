@@ -19,8 +19,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(base.metadata.create_all)
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -34,6 +32,6 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(SlowAPIMiddleware)
 
-app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
+# app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
 app.include_router(profile.router)
 app.include_router(user_profile.router)

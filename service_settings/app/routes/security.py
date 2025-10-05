@@ -10,8 +10,8 @@ from jose import jwt
 from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
 from app.schemas.account import DeleteAccount
 from app.schemas.change import ChangePassword
-from service_settings.app.schemas.change import ChangeEmailForm
-from service_security.app.schemas.response_model import EmailSendVerify
+from app.schemas.change import ChangeEmailForm
+from app.schemas.response_model import EmailSendVerify
 from shared.schemas.response_model import SuccessMessageAnswer, SuccessAnswer
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
@@ -74,7 +74,7 @@ async def processing_email(
     tokens: dict | None = __redis_save_jwt_token__.get_cached()
     token_info = tokens.get(rjp.name_key) if tokens else False
 
-    db_email_hash, _ = await ee.email_verification(current_user_id)
+    db_email_hash, _ = await ee.email_verification(user_info.db_session, current_user_id)
     if db_email_hash:
         return {
             "success": False, 

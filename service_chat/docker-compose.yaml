@@ -5,6 +5,6 @@ services:
       dockerfile: service_chat/Dockerfile
     
     ports: 
-      - "8003:8003"
+      - "${SERVICE_CHAT_PORT}:${SERVICE_CHAT_PORT}"
     env_file:
       - "../.env"

@@ -5,6 +5,6 @@ services:
       dockerfile: service_settings/Dockerfile
     
     ports: 
-      - "8009:8009"
+      - "${SERVICE_SETTINGS_PORT}:${SERVICE_SETTINGS_PORT}"
     env_file:
       - "../.env"

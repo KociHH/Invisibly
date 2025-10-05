@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 l = load_from_env
 
-NAME_PROJECT = l("NAME_PROJECT")
 POSTGRES_URL = l("POSTGRES_URL")
 
 UPORT = int(l("UPORT"))
@@ -26,5 +25,3 @@ RESULT_BACKEND_CELERY = l("RESULT_BACKEND_CELERY")
 ADMIN_CONFIRMATION_IP = l("ADMIN_CONFIRMATION_IP")
 
 RABBITMQ_URL = l("RABBITMQ_URL")
-
-HTTP_URL = l("HTTP_URL")

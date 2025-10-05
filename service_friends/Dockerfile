@@ -12,6 +12,4 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements
 COPY shared/ /app/shared/
 COPY service_friends/ /app/
 
-EXPOSE 8005
-
-CMD ["sh", "-c", "cd app && uvicorn main:app --host 0.0.0.0 --port 8005"]
+CMD ["sh", "-c", "alembic -c app/alembic.ini upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${SERVICE_FRIENDS_PORT}"]

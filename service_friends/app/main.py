@@ -3,7 +3,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
-from app.routes import friends, data
+from app.routes.export import friends_user, friends_requests
+from app.routes import friends
 from config import UHOST, UPORT
 from fastapi.staticfiles import StaticFiles
 from app.db.sql.settings import engine
@@ -19,8 +20,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(base.metadata.create_all)
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -34,6 +33,7 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(SlowAPIMiddleware)
 
-app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
+# app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
 app.include_router(friends.router)
-app.include_router(data.router)
+app.include_router(friends_user.router)
+app.include_router(friends_requests.router)

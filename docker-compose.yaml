@@ -1,109 +1,186 @@
 services:
 
-    service_frontend:
-      build:
-      context: .
-      dockerfile: service_frontend/Dockerfile
-
+    postgres:
+      image: postgres:15-alpine
+      environment:
+        POSTGRES_DB: "${PG_DB_NAME}"
+        POSTGRES_USER: "${PG_NAME}"
+        POSTGRES_PASSWORD: "${PG_PASSWORD}"
       ports:
-      - "8080:80"
+        - "${PG_PORT}:${PG_PORT}"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
 
-
-    service_admin:
-      build: ./service_admin
-      context: .
-      dockerfile: service_admin/Dockerfile
-      
-      ports: 
-      - "8001:8001"
-      env_file:
-      - ".env"
-
-
-    service_celery:
-      build: ./service_celery
-      context: .
-      dockerfile: service_celery/Dockerfile
-
-      ports: 
-      - "8002:8002"
-      env_file:
-      - ".env"
-
-
-    service_chat:
-      build:
-      context: .
-      dockerfile: service_chat/Dockerfile
-      
-      ports: 
-      - "8003:8003"
-      env_file:
-      - ".env"
-
+    rabbitmq:
+      image: rabbitmq:3-management-alpine
+      environment:
+        RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
+        RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD}"
+      ports:
+        - "${RABBIT_MQ_PORT}:${RABBIT_MQ_PORT}"
+        - "15672:15672"
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
 
     service_free:
       build:
-      context: .
-      dockerfile: service_free/Dockerfile
+        context: .
+        dockerfile: service_free/Dockerfile
 
       ports: 
-      - "8004:8004"
+        - "${SERVICE_FREE_PORT}:${SERVICE_FREE_PORT}"
       env_file:
-      - ".env"
+        - ".env"
+      depends_on:
+        - postgres
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:${SERVICE_FREE_PORT}/health"]
+        interval: 15s
+        timeout: 10s
+        retries: 5
+        start_period: 30s
 
+    service_admin:
+      build:
+        context: .
+        dockerfile: service_admin/Dockerfile
+      
+      ports: 
+        - "${SERVICE_ADMIN_PORT}:${SERVICE_ADMIN_PORT}"
+      env_file:
+        - ".env"
+      depends_on:
+        service_free:
+          condition: service_healthy
+        postgres:
+          condition: service_started
+
+    service_chat:
+      build:
+        context: .
+        dockerfile: service_chat/Dockerfile
+      
+      ports: 
+        - "${SERVICE_CHAT_PORT}:${SERVICE_CHAT_PORT}"
+      env_file:
+        - ".env"
+      depends_on:
+        service_free:
+          condition: service_healthy
+        postgres:
+          condition: service_started
 
     service_friends:
       build:
-      context: .
-      dockerfile: service_friends/Dockerfile
+        context: .
+        dockerfile: service_friends/Dockerfile
 
       ports: 
-      - "8005:8005"
+        - "${SERVICE_NOTIFICATIONS_PORT}:${SERVICE_NOTIFICATIONS_PORT}"
       env_file:
-      - ".env"
-
+        - ".env"
+      depends_on:
+        service_free:
+          condition: service_healthy
+        postgres:
+          condition: service_started
 
     service_notifications:
       build:
-      context: .
-      dockerfile: service_notifications/Dockerfile
+        context: .
+        dockerfile: service_notifications/Dockerfile
       
       ports: 
-      - "8006:8006"
+        - "${SERVICE_PROFILE_PORT}:${SERVICE_PROFILE_PORT}"
       env_file:
-      - ".env"
-
+        - ".env"
+      depends_on:
+        service_free:
+          condition: service_healthy
+        postgres:
+          condition: service_started
 
     service_profile:
       build:
-      context: .
-      dockerfile: service_profile/Dockerfile
+        context: .
+        dockerfile: service_profile/Dockerfile
       
       ports: 
-      - "8007:8007"
+        - "${SERVICE_FRIENDS_PORT}:${SERVICE_FRIENDS_PORT}"
       env_file:
-      - ".env"
-
+        - ".env"
+      depends_on:
+        service_free:
+          condition: service_healthy
+        postgres:
+          condition: service_started
 
     service_security:
       build:
-      context: .
-      dockerfile: service_security/Dockerfile
+        context: .
+        dockerfile: service_security/Dockerfile
       
       ports: 
-      - "8008:8008"
+        - "${SERVICE_SECURITY_PORT}:${SERVICE_SECURITY_PORT}"
       env_file:
-      - ".env"
-
+        - ".env"
+      depends_on:
+        service_free:
+          condition: service_healthy
+        postgres:
+          condition: service_started
 
     service_settings:
       build:
-      context: .
-      dockerfile: service_settings/Dockerfile
+        context: .
+        dockerfile: service_settings/Dockerfile
       
       ports: 
-      - "8009:8009"
+        - "${SERVICE_SETTINGS_PORT}:${SERVICE_SETTINGS_PORT}"
       env_file:
-      - ".env"
+        - ".env"
+      depends_on:
+        service_free:
+          condition: service_healthy
+        postgres:
+          condition: service_started
+
+    service_frontend:
+      build:
+        context: .
+        dockerfile: service_frontend/Dockerfile
+
+      ports:
+        - "8080:80"
+      environment:
+        SERVICE_FREE_HOST: "${SERVICE_FREE_HOST}"
+        SERVICE_FREE_PORT: "${SERVICE_FREE_PORT}"
+        
+        SERVICE_ADMIN_HOST: "${SERVICE_ADMIN_HOST}"
+        SERVICE_ADMIN_PORT: "${SERVICE_ADMIN_PORT}"
+        
+        SERVICE_CHAT_HOST: "${SERVICE_CHAT_HOST}"
+        SERVICE_CHAT_PORT: "${SERVICE_CHAT_PORT}"
+        
+        SERVICE_FRIENDS_HOST: "${SERVICE_FRIENDS_HOST}"
+        SERVICE_FRIENDS_PORT: "${SERVICE_FRIENDS_PORT}"
+        
+        SERVICE_NOTIFICATIONS_HOST: "${SERVICE_NOTIFICATIONS_HOST}"
+        SERVICE_NOTIFICATIONS_PORT: "${SERVICE_NOTIFICATIONS_PORT}"
+        
+        SERVICE_PROFILE_HOST: "${SERVICE_PROFILE_HOST}"
+        SERVICE_PROFILE_PORT: "${SERVICE_PROFILE_PORT}"
+
+        SERVICE_SECURITY_HOST: "${SERVICE_SECURITY_HOST}"
+        SERVICE_SECURITY_PORT: "${SERVICE_SECURITY_PORT}"
+
+        SERVICE_SETTINGS_HOST: "${SERVICE_SETTINGS_HOST}"
+        SERVICE_SETTINGS_PORT: "${SERVICE_SETTINGS_PORT}"
+      depends_on:
+        service_free:
+          condition: service_healthy
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
 

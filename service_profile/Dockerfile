@@ -12,6 +12,4 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements
 COPY shared/ /app/shared/
 COPY service_profile/ /app/
 
-EXPOSE 8007
-
-CMD ["sh", "-c", "cd app && uvicorn main:app --host 0.0.0.0 --port 8007"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${SERVICE_PROFILE_PORT}"]

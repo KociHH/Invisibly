@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(base.metadata.create_all)
-
     rabbit_server = asyncio.create_task(rabbit_init())
     logger.info("RebbitMQ success init")
     yield
@@ -46,5 +43,5 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(SlowAPIMiddleware)
 
-app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
+# app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
 app.include_router(notifications.router)

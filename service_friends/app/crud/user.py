@@ -4,7 +4,7 @@ from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.crud.redis.create import RedisJsons
 from shared.data.redis.instance import __redis_save_friends__
-from service_friends.app.db.sql.tables import FriendsUser, SendFriendRequests
+from app.db.sql.tables import FriendsUser, SendFriendRequests
 from shared.services.tools.other import full_name_constructor
 import logging
 from shared.crud.sql.user import UserCRUD
@@ -91,6 +91,35 @@ class UserProcess(UserCRUD):
         except Exception as e:
             logger.error(f'Ошибка в get_user_info:\n{e}')
             return None
+
+    async def friends_requests_info(
+        self, 
+        user_id: int | str, 
+        fields: list[str] | None
+        ):
+        available_fields = {
+            "user_id": SendFriendRequests.user_id,
+            "request_user_id": SendFriendRequests.request_user_id,
+            "send_at": SendFriendRequests.send_at
+        }
+        
+        friends_dao = BaseDAO(SendFriendRequests, self.db_session)
+        
+        if fields:
+            invalid_fields = [f for f in fields if f not in available_fields]
+            if invalid_fields:
+                raise ValueError(f"Invalid fields: {invalid_fields}")
+            
+            columns = [available_fields[field] for field in fields]
+        else:
+            columns = list(available_fields.values())
+
+        friends_requests = await friends_dao.get_all_column_values(
+            columns,
+            SendFriendRequests.user_id == user_id,
+        )
+
+        return friends_requests
 
 
 class RedisJsonsProcess(RedisJsons):

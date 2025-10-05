@@ -11,7 +11,7 @@ import smtplib
 from email.message import EmailMessage
 import random
 from typing import Any
-from config import REFRESH_TOKEN_LIFETIME_DAYS, SMTP_EMAIL, SMTP_HOST, SMTP_PASS, SMTP_PORT
+from config import REFRESH_TOKEN_LIFETIME_DAYS
 from shared.config.variables import curretly_msk
 from shared.crud.sql.user import UserCRUD
 from app.services.http_client import _http_client

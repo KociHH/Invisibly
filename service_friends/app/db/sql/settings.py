@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from config.env import POSTGRES_URL
+from config import POSTGRES_URL
 from sqlalchemy import pool
 from typing import AsyncGenerator
 

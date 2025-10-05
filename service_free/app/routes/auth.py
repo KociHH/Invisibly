@@ -4,8 +4,8 @@ from fastapi.responses import HTMLResponse
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy import BaseDAO
-from service_free.app.db.sql.tables import UserRegistered
-from service_free.app.db.sql.settings import get_db_session
+from app.db.sql.tables import UserRegistered
+from app.db.sql.settings import get_db_session
 from app.services.http_client import _http_client
 from app.crud.user import EncryptEmailProcess
 from shared.config.variables import curretly_msk, path_html, PSWD_context
@@ -29,7 +29,7 @@ async def register(
         return {"success": False, "message": "Пользователь с таким логином уже существует"}
     
     ee = EncryptEmailProcess(user.email)
-    db_email_hash, email_hash = await ee.email_verification()
+    db_email_hash, email_hash = await ee.email_verification(db_session)
     if db_email_hash:
         return {"success": False, "message": "Пользователь с таким email уже существует"}
 

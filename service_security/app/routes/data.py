@@ -12,7 +12,7 @@ from app.schemas.data import CreateUJWT
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.get("/create_UJWT")
+@router.post("/create_UJWT")
 async def create_UJWT_post(
     cujwt: CreateUJWT,
     user_process: UserProcess = Depends(get_current_user_id),

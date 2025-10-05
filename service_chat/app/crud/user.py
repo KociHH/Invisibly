@@ -3,7 +3,7 @@ from sqlalchemy import and_, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.crud.redis.create import RedisJsons
 from shared.data.redis.instance import __redis_save_chats__
-from service_chat.app.db.sql.tables import UserChat, Message
+from app.db.sql.tables import UserChat, Message
 from shared.services.tools.other import full_name_constructor
 import logging
 from shared.crud.sql.user import UserCRUD

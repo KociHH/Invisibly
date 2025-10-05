@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any
 from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
-from config.variables import curretly_msk
+from shared.config.variables import curretly_msk
 import logging
 from shared.crud.sql.user import UserCRUD
 from fastapi import  HTTPException

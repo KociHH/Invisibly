@@ -1,13 +1,14 @@
 from datetime import timedelta
-from service_celery.app.celery.app import celery_app
+from app.celery.app import celery_app
 import asyncio
 from db.sql.settings import get_db_session
 import logging
 from kos_Htools.sql.sql_alchemy import BaseDAO
-from config.env import TOKEN_LIFETIME_DAYS
+from ...config import TOKEN_LIFETIME_DAYS
 from app.services.user import CreateTable
 from shared.data.redis.instance import __redis_save_sql_call__
-from config.variables import curretly_msk
+from shared.config.variables import curretly_msk
+from app.db.sql.tables import SecretKeyJWT
 
 logger = logging.getLogger(__name__)
 

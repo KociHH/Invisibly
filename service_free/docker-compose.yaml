@@ -5,6 +5,6 @@ services:
       dockerfile: service_free/Dockerfile
 
     ports: 
-      - "8004:8004"
+      - "${SERVICE_FREE_PORT}:${SERVICE_FREE_PORT}"
     env_file:
       - "../.env"

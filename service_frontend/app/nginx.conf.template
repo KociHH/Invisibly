@@ -1,0 +1,153 @@
+upstream free_service {
+    server ${SERVICE_FREE_HOST}:${SERVICE_FREE_PORT};
+}
+
+upstream admin_service {
+    server ${SERVICE_ADMIN_HOST}:${SERVICE_ADMIN_PORT};
+}
+
+upstream chat_service {
+    server ${SERVICE_CHAT_HOST}:${SERVICE_CHAT_PORT};
+}
+
+upstream friends_service {
+    server ${SERVICE_FRIENDS_HOST}:${SERVICE_FRIENDS_PORT};
+}
+
+upstream notifications_service {
+    server ${SERVICE_NOTIFICATIONS_HOST}:${SERVICE_NOTIFICATIONS_PORT};
+}
+
+upstream profile_service {
+    server ${SERVICE_PROFILE_HOST}:${SERVICE_PROFILE_PORT};
+}
+
+upstream security_service {
+    server ${SERVICE_SECURITY_HOST}:${SERVICE_SECURITY_PORT};
+}
+
+upstream settings_service {
+    server ${SERVICE_SETTINGS_HOST}:${SERVICE_SETTINGS_PORT};
+}
+
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_types
+        text/plain
+        text/css
+        application/javascript
+        application/json
+        application/manifest+json
+        application/xml
+        text/xml
+        image/svg+xml
+        font/ttf
+        font/otf
+        application/font-woff
+        application/font-woff2;
+
+    location ~* \.(?:js|css|png|jpg|jpeg|gif|svg|ico|webp|ttf|otf|woff|woff2)$ {
+        try_files $uri =404;
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800, immutable";
+    }
+
+    location /api/ {
+        proxy_pass http://free_service/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/(login|register|confirm_code|confirm_password)$ {
+        proxy_pass http://free_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/profile {
+        proxy_pass http://profile_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/chats {
+        proxy_pass http://chat_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/friends {
+        proxy_pass http://friends_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/settings {
+        proxy_pass http://settings_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/notifications {
+        proxy_pass http://notifications_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/security {
+        proxy_pass http://security_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ~ ^/admin {
+        proxy_pass http://admin_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /health {
+        proxy_pass http://free_service/health;
+        proxy_set_header Host $host;
+    }
+
+    location ~ ^/(login|register|user|confirm_code|confirm_password)(/.*)?$ {
+        try_files $uri $uri.html $uri/ /index.html;
+    }
+
+    location / {
+        try_files $uri $uri.html $uri/ /index.html;
+    }
+
+    location = /healthz {
+        add_header Content-Type text/plain;
+        return 200 'ok';
+    }
+}
