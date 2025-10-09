@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 POSTGRES_URL = os.getenv("POSTGRES_URL")
-SERVICE_CHAT_NAME_SCHEMA = os.getenv("SERVICE_CHAT_NAME_SCHEMA")
+schema = os.getenv("SERVICE_CHAT_NAME_SCHEMA")
 
 from app.db.sql.models.personal_user import Message, UserChat, ChatParticipant, base
 
@@ -35,12 +35,19 @@ target_metadata = base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+def include_name(name, type_, parent_names):
+    if type_ == "schema":
+        return name == schema
+    if type_ == "table":
+        return parent_names.get("schema_name") == schema
+    return True
 
 def run_migrations_offline() -> None:
     context.configure(
         url=POSTGRES_URL,
         target_metadata=target_metadata,
         literal_binds=True,
+        include_name=include_name,
         dialect_opts={"paramstyle": "named"},
     )
 
@@ -48,12 +55,13 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 def do_run_migrations(connection):
-    schema = SERVICE_CHAT_NAME_SCHEMA
+    schema = schema
 
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
         include_schemas=True,
+        include_name=include_name,
         version_table_schema=schema,
     )
     with context.begin_transaction():
