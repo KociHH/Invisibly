@@ -4,7 +4,7 @@ from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.crud.redis.create import RedisJsons
 from shared.data.redis.instance import __redis_save_friends__
-from app.db.sql.tables import FriendsUser, SendFriendRequests
+from app.db.sql.tables import FriendUser, SendFriendRequest
 from shared.services.tools.other import full_name_constructor
 import logging
 from shared.crud.sql.user import UserCRUD
@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class UserProcess(UserCRUD):
     def __init__(self, user_id: int, db_session: AsyncSession) -> None:
         super().__init__(user_id=user_id, db_session=db_session)
-        self.friend_user = BaseDAO(FriendsUser, db_session)
-        self.send_friend_request = BaseDAO(SendFriendRequests, db_session)
+        self.friend_user = BaseDAO(FriendUser, db_session)
+        self.send_friend_request = BaseDAO(SendFriendRequest, db_session)
         self._cached_user_info = None
 
     async def find_friend_by_param(
@@ -25,9 +25,9 @@ class UserProcess(UserCRUD):
         param_value: str | Any
         ) -> dict:
         attr = {
-            "user_id": FriendsUser.user_id, 
-            "friend_id": FriendsUser.friend_id, 
-            "addition_number": FriendsUser.addition_number, 
+            "user_id": FriendUser.user_id, 
+            "friend_id": FriendUser.friend_id, 
+            "addition_number": FriendUser.addition_number, 
             }
         if param_name not in attr:
             logger.error(f"Не найден данный параметр: {param_name}")
@@ -35,7 +35,7 @@ class UserProcess(UserCRUD):
         
         column_to_search = attr[param_name]
 
-        user_dao = BaseDAO(FriendsUser, self.db_session)
+        user_dao = BaseDAO(FriendUser, self.db_session)
 
         user_info = await user_dao.get_one(column_to_search == param_value)
         if user_info:
@@ -50,11 +50,11 @@ class UserProcess(UserCRUD):
         if not update_data: # {}
             return False
 
-        friend_dao = BaseDAO(FriendsUser, self.db_session)
+        friend_dao = BaseDAO(FriendUser, self.db_session)
         
         try:
             success = await friend_dao.update(
-                FriendsUser.user_id == self.user_id, 
+                FriendUser.user_id == self.user_id, 
                 **update_data
                 )
             return success
@@ -78,7 +78,7 @@ class UserProcess(UserCRUD):
                     self._cached_user_info = user_obj
             else:
                 user_obj = await self.friend_user.get_one(
-                    and_(FriendsUser.friend_id == friend_id, FriendsUser.user_id == user_id or self.user_id))
+                    and_(FriendUser.friend_id == friend_id, FriendUser.user_id == user_id or self.user_id))
 
             info = {
                 "user_id": user_obj.user_id,
@@ -98,12 +98,12 @@ class UserProcess(UserCRUD):
         fields: list[str] | None
         ):
         available_fields = {
-            "user_id": SendFriendRequests.user_id,
-            "request_user_id": SendFriendRequests.request_user_id,
-            "send_at": SendFriendRequests.send_at
+            "user_id": SendFriendRequest.user_id,
+            "request_user_id": SendFriendRequest.request_user_id,
+            "send_at": SendFriendRequest.send_at
         }
         
-        friends_dao = BaseDAO(SendFriendRequests, self.db_session)
+        friends_dao = BaseDAO(SendFriendRequest, self.db_session)
         
         if fields:
             invalid_fields = [f for f in fields if f not in available_fields]
@@ -116,7 +116,7 @@ class UserProcess(UserCRUD):
 
         friends_requests = await friends_dao.get_all_column_values(
             columns,
-            SendFriendRequests.user_id == user_id,
+            SendFriendRequest.user_id == user_id,
         )
 
         return friends_requests
@@ -139,11 +139,11 @@ class RedisJsonsProcess(RedisJsons):
         friends_data = data.get(self.name_key)
         if not friends_data:
 
-            friends_dao = BaseDAO(FriendsUser, db_session)
+            friends_dao = BaseDAO(FriendUser, db_session)
 
             friends = await friends_dao.get_all_column_values(
-                (FriendsUser.friend_id, FriendsUser.addition_number),
-                FriendsUser.user_id == self.user_id
+                (FriendUser.friend_id, FriendUser.addition_number),
+                FriendUser.user_id == self.user_id
             )
 
             if friends:

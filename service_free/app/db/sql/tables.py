@@ -1,12 +1,18 @@
+import os
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy import Index, create_engine, select, pool, Sequence
+from sqlalchemy import Index, MetaData, create_engine, select, pool, Sequence
 from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
 import logging
 from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, String, Integer, DateTime, UniqueConstraint
 from typing import AsyncGenerator
 from datetime import datetime
+from dotenv import load_dotenv
 
-base = declarative_base()
+load_dotenv()
+
+SERVICE_FREE_NAME_SCHEMA = os.getenv("SERVICE_FREE_NAME_SCHEMA")
+
+base = declarative_base(metadata=MetaData(SERVICE_FREE_NAME_SCHEMA))
 
 class UserRegistered(base):
     """

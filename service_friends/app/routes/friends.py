@@ -13,7 +13,7 @@ from app.schemas.user import FriendAdd, FriendDelete
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.db.sql.settings import get_db_session
-from app.db.sql.tables import FriendsUser, SendFriendRequests
+from app.db.sql.tables import FriendUser, SendFriendRequest
 from app.crud.user import RedisJsonsProcess, UserProcess
 
 router = APIRouter()
@@ -46,8 +46,8 @@ async def processing_friend_add(
     user_info: UserProcess = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session),
 ):
-    friends_dao = BaseDAO(FriendsUser, db_session)
-    friend_requests = BaseDAO(SendFriendRequests, db_session)
+    friends_dao = BaseDAO(FriendUser, db_session)
+    friend_requests = BaseDAO(SendFriendRequest, db_session)
 
     login = "@" + fa.login
 
@@ -63,7 +63,7 @@ async def processing_friend_add(
             }
 
         friend_user_info = await friends_dao.get_one(
-            and_(FriendsUser.user_id == user_info.user_id, FriendsUser.friend_id == friend_id),
+            and_(FriendUser.user_id == user_info.user_id, FriendUser.friend_id == friend_id),
             )
 
         if friend_user_info:
@@ -73,7 +73,7 @@ async def processing_friend_add(
             }
         else:
             friend_requests_info = await friend_requests.get_one(
-                and_(SendFriendRequests.request_user_id == user_info.user_id, SendFriendRequests.user_id == friend_id)
+                and_(SendFriendRequest.request_user_id == user_info.user_id, SendFriendRequest.user_id == friend_id)
             )
 
             if friend_requests_info:
@@ -109,10 +109,10 @@ async def processing_friend_delete(
     user_info: UserProcess = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session),
 ):
-    friend_dao = BaseDAO(FriendsUser, db_session)
+    friend_dao = BaseDAO(FriendUser, db_session)
 
     friend_info = await friend_dao.delete(
-        and_(FriendsUser.friend_id == fd.user_id, FriendDelete.user_id == user_info.user_id)
+        and_(FriendUser.friend_id == fd.user_id, FriendDelete.user_id == user_info.user_id)
     ) 
 
     if friend_info:

@@ -3,7 +3,7 @@ from sqlalchemy import and_, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.crud.redis.create import RedisJsons
 from shared.data.redis.instance import __redis_save_chats__
-from app.db.sql.tables import UserChat, Message
+from app.db.sql.models.personal_user import UserChat, Message, ChatParticipant
 from shared.services.tools.other import full_name_constructor
 import logging
 from shared.crud.sql.user import UserCRUD
@@ -113,7 +113,7 @@ class MessageProcess:
         message_dao = BaseDAO(Message, db_session)
         
         messages_chat = await message_dao.get_all_column_values(
-            (Message.sender_id, Message.send_at, Message.content),
+            (Message.participant_id, Message.send_at, Message.content),
             Message.chat_id == self.chat_id
         )
         

@@ -1,7 +1,7 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, text
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
@@ -11,8 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 POSTGRES_URL = os.getenv("POSTGRES_URL")
+schema = os.getenv("SERVICE_FRIENDS_NAME_SCHEMA")
 
-from app.db.sql.tables import FriendsUser, SendFriendRequests, base
+from app.db.sql.tables import FriendUser, SendFriendRequest, base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -34,21 +35,34 @@ target_metadata = base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+def include_name(name, type_, parent_names):
+    if type_ == "schema":
+        return name == schema
+    if type_ == "table":
+        return parent_names.get("schema_name") == schema
+    return True
 
 def run_migrations_offline() -> None:
-
     context.configure(
         url=POSTGRES_URL,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        include_name=include_name,
+        dialect_opts={"paramstyle": "named"}
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
 def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_schemas=True,
+        include_name=include_name,
+        version_table_schema=schema
+    )
+
     with context.begin_transaction():
         context.run_migrations()
 

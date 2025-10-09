@@ -1,7 +1,7 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, text
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
@@ -11,8 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 POSTGRES_URL = os.getenv("POSTGRES_URL")
+SERVICE_CHAT_NAME_SCHEMA = os.getenv("SERVICE_CHAT_NAME_SCHEMA")
 
-from app.db.sql.tables import Message, UserChat, base
+from app.db.sql.models.personal_user import Message, UserChat, ChatParticipant, base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -36,7 +37,6 @@ target_metadata = base.metadata
 
 
 def run_migrations_offline() -> None:
-
     context.configure(
         url=POSTGRES_URL,
         target_metadata=target_metadata,
@@ -48,7 +48,14 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
+    schema = SERVICE_CHAT_NAME_SCHEMA
+
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_schemas=True,
+        version_table_schema=schema,
+    )
     with context.begin_transaction():
         context.run_migrations()
 

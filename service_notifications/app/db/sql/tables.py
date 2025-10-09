@@ -1,12 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy import Index, create_engine, select, pool, Sequence
+from sqlalchemy import Index, MetaData, create_engine, select, pool, Sequence
 from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
 import logging
 from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, String, Integer, DateTime, UniqueConstraint
 from typing import AsyncGenerator
 from datetime import datetime
+from config import SERVICE_NOTIFICATIONS_NAME_SCHEMA
 
-base = declarative_base()
+base = declarative_base(metadata=MetaData(SERVICE_NOTIFICATIONS_NAME_SCHEMA))
+
 
 class NotificationSystem(base):
     """

@@ -1,7 +1,7 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, text
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 POSTGRES_URL = os.getenv("POSTGRES_URL")
+SERVICE_NOTIFICATIONS_NAME_SCHEMA = os.getenv("SERVICE_NOTIFICATIONS_NAME_SCHEMA")
 
 from app.db.sql.tables import NotificationSystem, NotificationUser, base
 
@@ -36,12 +37,12 @@ target_metadata = base.metadata
 
 
 def run_migrations_offline() -> None:
-
+    context.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{SERVICE_NOTIFICATIONS_NAME_SCHEMA}"'))
     context.configure(
         url=POSTGRES_URL,
         target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        include_schemas=True,
+        version_table_schema=SERVICE_NOTIFICATIONS_NAME_SCHEMA
     )
 
     with context.begin_transaction():
