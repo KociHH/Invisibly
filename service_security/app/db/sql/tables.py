@@ -28,7 +28,7 @@ class UserJWT(base):
     __tablename__ = 'userJWT'
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, unique=False, nullable=False)
     jti: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     issued_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

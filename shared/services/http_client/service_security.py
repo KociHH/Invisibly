@@ -1,11 +1,7 @@
 import logging
 from shared.services.http_client.variables import PublicHttpClient
-from dotenv import load_dotenv
-import os
 
 logger = logging.getLogger(__name__)
-
-load_dotenv()
 
 
 class ServiceSecurityHttpClient(PublicHttpClient):
@@ -15,4 +11,4 @@ class ServiceSecurityHttpClient(PublicHttpClient):
     async def create_UJWT_post(self, data: dict) -> dict:
         path = "/create_UJWT"
         payload = data
-        return await self._perform_request("POST", path, payload)
+        return await self._perform_request("POST", path, payload, None)

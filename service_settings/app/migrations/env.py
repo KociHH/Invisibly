@@ -63,6 +63,7 @@ def do_run_migrations(connection):
         version_table_schema=schema
         )
     with context.begin_transaction():
+        context.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema}"'))
         context.run_migrations()
 
 async def run_async_migrations():

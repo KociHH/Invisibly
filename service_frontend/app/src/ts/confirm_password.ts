@@ -18,7 +18,7 @@ class ConfirmPassword {
             const urlParams = getUrlParams(["cause"]);
             const cause = decodeURIComponent(urlParams["cause"]);
 
-            const response = await securedApiCall('/confirm_password', {
+            const response = await securedApiCall('/api/security/confirm_password', {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',

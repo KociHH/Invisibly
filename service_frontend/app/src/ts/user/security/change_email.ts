@@ -3,7 +3,7 @@ import { checkUpdateTokens, securedApiCall } from "../../utils/secured.js";
 
 class ChangedEmail {
     private async getElemEmail() {
-        const response = await securedApiCall("/change_email/data")
+        const response = await securedApiCall("/api/settings/change_email/data")
         if (!response || !response.ok) {
             log_sending_to_page('Не удалось загрузить данные для настроек', "error");
             return;
@@ -41,7 +41,7 @@ class ChangedEmail {
                 email,
             };
     
-            const response = await securedApiCall("/change_email", {
+            const response = await securedApiCall("/api/settings/change_email", {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',

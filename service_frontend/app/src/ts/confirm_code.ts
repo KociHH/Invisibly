@@ -78,7 +78,7 @@ class ConfirmCodePage {
         const code = codeInput.value.trim();
 
         try {
-            const response = await securedApiCall(`/confirm_code`, {
+            const response = await securedApiCall(`/api/security/confirm_code`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ class ConfirmCodePage {
     }
 
     private async getElemDataCode(): Promise<void> {
-        const response = await securedApiCall(`/confirm_code/data?cause=${encodeURIComponent(this.cause)}`)
+        const response = await securedApiCall(`/api/security/confirm_code/data?cause=${encodeURIComponent(this.cause)}`)
         if (!response || !response.ok) {
             console.error('Не удалось загрузить данные для подтверждения email');
             return;
@@ -261,7 +261,7 @@ class ConfirmCodePage {
         }
 
         try {
-            const response = await securedApiCall(`/confirm_code/data?cause=${encodeURIComponent(this.cause)}&resend=${encodeURIComponent("true")}`);
+            const response = await securedApiCall(`/api/security/confirm_code/data?cause=${encodeURIComponent(this.cause)}&resend=${encodeURIComponent("true")}`);
 
             if (response && response.ok) {
                 clearItemsStorage([TIME_EXP_TOKEN, TIME_EXP_REPEATED]);

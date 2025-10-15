@@ -1,5 +1,6 @@
 from typing import Any
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 class UserFilter(BaseModel):
     param_name: str
@@ -16,3 +17,9 @@ class UserUpdate(BaseModel):
     surname: str | None = None
     email: str | None = None
     bio: str | None = None
+
+class GetOrCacheUserInfo(BaseModel):
+    user_id: int | str
+    handle: str
+    return_items: list | None = None
+    save_sql_redis: bool = True

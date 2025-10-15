@@ -1,5 +1,5 @@
 from typing import Any
-from fastapi import Request
+from fastapi import HTTPException, Request
 from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy import BaseDAO
@@ -8,17 +8,14 @@ import hashlib
 import logging
 from shared.crud.sql.user import UserCRUD, EncryptEmail
 from shared.config.variables import curretly_msk
+from shared.crud.redis.create import RedisJsons
 
 logger = logging.getLogger(__name__)
 
 class UserProcess(UserCRUD):
     def __init__(self, user_id: int, db_session: AsyncSession) -> None:
         super().__init__(user_id, db_session)
-        self._cached_user_info = None
         self.user_registered = BaseDAO(UserRegistered, self.db_session)
-        self._user_geted_data = self.user_registered.get_one(UserRegistered.user_id == self.user_id)
-
-        super().__init__(user_id=user_id, db_session=db_session)
 
     async def get_user_info(
         self, 
@@ -27,19 +24,14 @@ class UserProcess(UserCRUD):
         user_id: int | str | None = None
         ) -> dict[str, Any] | None:
         """
-        UserRegistered.user_id == user_id
+        default: UserRegistered.user_id == self.user_id 
         """
         try:
             if not user_id:
-                if not self.check_user():
-                    return None
-            
-                user_obj = self._cached_user_info
-                if not user_obj:
-                    user_obj = await self._user_geted_data 
-                    self._cached_user_info = user_obj
-            else:
-                user_obj = await self.user_registered.get_one(UserRegistered.user_id == user_id)
+                user_id = self.user_id
+                
+            user_obj = await self.user_registered.get_one(
+                UserRegistered.user_id == user_id)
 
             info = {
                 "user_id": user_obj.user_id,
@@ -165,3 +157,48 @@ class GetUserInfo:
         if not device_type:
             device_type = "desktop"
         return {"device_type": device_type, "user_agent": user_agent}
+
+
+class RedisJsonsProcess(RedisJsons):
+    def __init__(self, user_id: int | str, handle: str) -> None:
+        super().__init__(user_id, handle)
+
+    async def get_or_cache_user_info(
+        self, 
+        db_session: AsyncSession,
+        return_items: list | None = None,
+        save_sql_redis: bool = True,
+        ):
+        """
+        Берет данные из __redis_save_sql_call__, если нет self.name_key в redis то береться из базы UserRegistered
+        """
+        if return_items == None:
+            return_items = ["name", "surname", "login", "bio", "email", "email_hash"]
+
+        obj: dict = self.redis_return_data(items=return_items, key_data=self.name_key)
+
+        if obj.get("redis") == "empty":
+            user_process = UserProcess(self.user_id, db_session)
+            user = await user_process.get_user_info(w_pswd=False, w_email_hash=False)
+            
+            if user is None:
+                logger.error(f"Не удалось получить информацию о пользователе {self.user_id} из базы данных.")
+                raise HTTPException(status_code=500, detail="Server error: User not found in database.")
+            
+            new_data = {
+                "user_id": user.get("user_id"),
+                "name": user.get("name"),
+                "surname": user.get("surname"),
+                "login": user.get("login"),
+                "bio": user.get("bio"),
+                "email": user.get("email"),
+            }
+
+            if save_sql_redis:
+                new_data = self.save_sql_call(new_data)
+                if not new_data:
+                    logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
+                    raise HTTPException(status_code=500, detail="Server error")
+
+            obj = new_data
+        return obj

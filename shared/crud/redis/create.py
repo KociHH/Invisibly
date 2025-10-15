@@ -82,46 +82,6 @@ class RedisJsons:
             new_data[i] = base_data[key_data].get(i)
         return new_data
 
-    async def get_or_cache_user_info(
-        self, 
-        user_info: UserCRUD, 
-        return_items: list | None = None,
-        save_sql_redis: bool = True,
-        ):
-        """
-        Берет данные из __redis_save_sql_call__, если нет self.name_key в redis то береться из базы UserRegistered
-        
-        user_info: класс UserInfo объект юзера
-        """
-        if return_items == None:
-            return_items = ["name", "surname", "login", "bio", "email", "email_hash"]
-
-        obj: dict = self.redis_return_data(items=return_items, key_data=self.name_key)
-
-        if obj.get("redis") == "empty":
-            user = await user_info.get_user_info(w_pswd=False, w_email_hash=False)
-            if user is None:
-                logger.error(f"Не удалось получить информацию о пользователе {self.user_id} из базы данных.")
-                raise HTTPException(status_code=500, detail="Server error: User not found in database.")
-            
-            new_data = {
-                "user_id": user.get("user_id"),
-                "name": user.get("name"),
-                "surname": user.get("surname"),
-                "login": user.get("login"),
-                "bio": user.get("bio"),
-                "email": user.get("email"),
-            }
-
-            if save_sql_redis:
-                new_data = self.save_sql_call(new_data)
-                if not new_data:
-                    logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
-                    raise HTTPException(status_code=500, detail="Server error")
-
-            obj = new_data
-        return obj
-
     def delete_token(self):
         try:
             jwt_tokens: dict | None = __redis_save_jwt_token__.get_cached()

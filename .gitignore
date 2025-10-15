@@ -22,3 +22,4 @@ coverage/
 *.session
 test.py
 node_modules/
+generate_migrations.py

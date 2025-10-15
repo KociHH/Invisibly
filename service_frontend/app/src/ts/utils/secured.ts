@@ -4,7 +4,7 @@ const SERVER_ERROR = 'Server error'
 
 async function updateTokens(currentRefreshToken: string): Promise<{accessToken: string; refreshToken: string}> {
     try {
-        const response = await fetch('/refresh', {
+        const response = await fetch('/api/security/refresh', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ function clearTokensAndRedirectLogin() {
 }
 
 async function updateAccess(currentRefreshToken: string): Promise<{accessToken: string}> {
-    const response = await fetch("/access", {
+    const response = await fetch("/api/security/access", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ async function securedApiCall(url_api: string, options: RequestInit = {}) {
 
 async function checkUpdateTokens() {
     try {
-        const response = await securedApiCall("/check_update_tokens",{
+        const response = await securedApiCall("/api/security/check_update_tokens",{
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
@@ -139,7 +139,7 @@ async function checkUpdateTokens() {
 
 async function DeleteTokenRedis(handle: string) {
     try {
-        const response = await securedApiCall("/redis/delete_token/user", {
+        const response = await securedApiCall("/api/security/redis/delete_token/user", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',

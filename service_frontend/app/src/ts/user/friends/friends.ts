@@ -43,7 +43,7 @@ class FriendsProcess {
 
     private async getFriendsPage() {
         
-        const response = await securedApiCall("/friends/data")
+        const response = await securedApiCall("/api/friends/friends/data")
         
         if (response && response.ok) {
             const data = await response.json();
@@ -62,7 +62,7 @@ class FriendsProcess {
                         
                         friendsHtml += `
                         <div class="friend-${friend.addition_number}" data-friend-id="${friendId}">
-                            <a href="/friends/${friendId}/profile">${friend.full_name}</a>
+                            <a href="/user/profile?id=${friendId}">${friend.full_name}</a>
                             <form class="friend_control-form">
                                 <button data-action="delete">Удалить из друзей</button>
                             </form>

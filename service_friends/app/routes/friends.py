@@ -5,7 +5,7 @@ import logging
 from sqlalchemy import and_
 from fastapi import Depends
 from shared.config.variables import path_html, curretly_msk
-from app.crud.dependencies import get_current_user_id
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from app.services.http_client import _http_client
 from shared.data.redis.instance import __redis_save_sql_call__
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
@@ -19,9 +19,10 @@ from app.crud.user import RedisJsonsProcess, UserProcess
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+
 @router.get("/friends/data", response_model=SuccessAnswer)
 async def user_friends_data(
-    user_info: UserProcess = Depends(get_current_user_id),
+    user_info: UserProcess = Depends(get_current_user_dep),
     db_session: AsyncSession = Depends(get_db_session),
     ):
     rjp = RedisJsonsProcess(user_info.user_id, "friends")
@@ -33,17 +34,10 @@ async def user_friends_data(
         "friends": return_info_friends,
         }
 
-
-@router.get("/friends/add", response_class=HTMLResponse)
-async def friends_add():
-    with open(path_html + "user/friends/friends_add.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
-
 @router.post("/friends/add")
 async def processing_friend_add(
     fa: FriendAdd,
-    user_info: UserProcess = Depends(get_current_user_id),
+    user_info: UserProcess = Depends(get_current_user_dep),
     db_session: AsyncSession = Depends(get_db_session),
 ):
     friends_dao = BaseDAO(FriendUser, db_session)
@@ -102,11 +96,10 @@ async def processing_friend_add(
             "message": "User not found"
         }
 
-
 @router.post("/friends/delete")
 async def processing_friend_delete(
     fd: FriendDelete,
-    user_info: UserProcess = Depends(get_current_user_id),
+    user_info: UserProcess = Depends(get_current_user_dep),
     db_session: AsyncSession = Depends(get_db_session),
 ):
     friend_dao = BaseDAO(FriendUser, db_session)

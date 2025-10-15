@@ -10,7 +10,7 @@ class FriendAddProcess {
             const loginInput = (document.getElementById("login") as HTMLInputElement);
             const login = loginInput.value;
 
-            const response = await securedApiCall("/friends/add", {
+            const response = await securedApiCall("/api/friends/friends/add", {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',

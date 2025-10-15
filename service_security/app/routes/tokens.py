@@ -1,3 +1,4 @@
+from httpx import get
 from app.db.sql.tables import UserJWT
 from fastapi import APIRouter, HTTPException
 import logging
@@ -8,7 +9,7 @@ from fastapi import Depends
 from app.crud.user import CreateTable, UserProcess, RedisJsonsProcess
 from kos_Htools.sql.sql_alchemy import BaseDAO
 from jose import jwt, exceptions
-from app.crud.dependencies import template_not_found_user, get_current_user_id
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from app.schemas.token import DeleteTokenRedis, RefreshTokenRequest
 from app.schemas.response_model import EventTokensResponse
 
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 async def refresh_access_update(
     request_body: RefreshTokenRequest, 
     db_session: AsyncSession = Depends(get_db_session),
-    user_info: UserProcess = Depends(template_not_found_user)
+    user_info: UserProcess = Depends(require_existing_user_dep)
     ):
     """with SQL response"""
     try:
@@ -107,7 +108,7 @@ async def access_update(request_body: RefreshTokenRequest):
 
 @router.post("/check_update_tokens")    
 async def check_update_tokens(
-    user_info: UserProcess = Depends(get_current_user_id)
+    user_info: UserProcess = Depends(get_current_user_dep)
 ):
     try:
         return {
@@ -122,7 +123,7 @@ async def check_update_tokens(
 @router.post("/redis/delete_token/user")
 async def redis_delete_token_user(
     dtr: DeleteTokenRedis,
-    user_info: UserProcess = Depends(template_not_found_user)
+    user_info: UserProcess = Depends(require_existing_user_dep)
 ): 
     rjp = RedisJsonsProcess(user_info.user_id, dtr.handle)
 

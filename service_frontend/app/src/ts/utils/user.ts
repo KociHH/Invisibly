@@ -4,7 +4,7 @@ async function change_email_api(
     emailNew: string,
     redirect_url: string,
 ) {
-    const response = await securedApiCall("/change/email", {
+    const response = await securedApiCall("/api/settings/change/email", {
         method: "POST",
         headers: {
             'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ async function change_email_api(
 }
 
 async function deleteFriend(friendId: number) {
-    const response = await securedApiCall("/friends/delete", {
+    const response = await securedApiCall("/api/friends/friends/delete", {
         method: "POST",
         headers: {
             'Content-Type': 'application/json',

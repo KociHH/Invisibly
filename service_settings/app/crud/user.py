@@ -18,36 +18,6 @@ class UserProcess(UserCRUD):
     def __init__(self, user_id: int, db_session: AsyncSession) -> None:
         super().__init__(user_id=user_id, db_session=db_session)
 
-    async def get_user_info(self, w_pswd: bool, w_email_hash: bool) -> dict[str, Any] | None:
-        try:
-            if not self.check_user():
-                return None
-            
-            user_obj = self._cached_user_info
-            if not user_obj:
-                user_obj = await self._user_geted_data 
-                self._cached_user_info = user_obj
-
-            info = {
-                "user_id": user_obj.user_id,
-                "name": user_obj.name,
-                "surname": user_obj.surname,
-                "login": user_obj.login,
-                "bio": user_obj.bio,
-                "email": user_obj.email,
-                "registration_date": user_obj.registration_date
-            }
-            if w_pswd:
-                info['password'] = user_obj.password
-            if w_email_hash:
-                info['email_hash'] = user_obj.email_hash
-
-            return info
-            
-        except Exception as e:
-            logger.error(f'Ошибка в get_user_info:\n{e}')
-            return None
-
 
 class EncryptEmailProcess(EncryptEmail):
     def __init__(self, email: str, encrypted: str | None = None) -> None:

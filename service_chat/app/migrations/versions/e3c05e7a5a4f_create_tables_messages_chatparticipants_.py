@@ -62,8 +62,6 @@ def upgrade() -> None:
     op.create_index(op.f('ix_chat_messages_send_at'), 'messages', ['send_at'], unique=False, schema='chat')
     op.create_index('ix_messages_chat_send_at', 'messages', ['chat_id', 'send_at'], unique=False, schema='chat')
     op.create_index('ix_messages_participant_send_at', 'messages', ['participant_id', 'send_at'], unique=False, schema='chat')
-    op.drop_table('alembic_version', schema='celery')
-    op.drop_table('secretKeyJWT', schema='celery')
     # ### end Alembic commands ###
 
 

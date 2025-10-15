@@ -35,7 +35,7 @@ class ChangePassword {
                 requestBody.confirm = isVerified
             }
 
-            const response = await securedApiCall("/change_password", {
+            const response = await securedApiCall("/api/settings/change_password", {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',

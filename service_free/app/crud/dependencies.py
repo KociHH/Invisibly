@@ -13,16 +13,12 @@ async def get_current_user_id(
     db_session: AsyncSession = Depends(get_db_session)
     ):
     user_id = verify_token(token)
-    user_info = UserProcess(user_id, db_session)
-    return user_info.user_id
+    user_process = UserProcess(user_id, db_session)
+    return user_process
 
-async def template_not_found_user(
-    current_user_id: int = Depends(get_current_user_id),
-    db_session: AsyncSession = Depends(get_db_session)
+async def require_existing_user(
+    user_process: UserProcess = Depends(get_current_user_id),
     ):
-    user_info = UserProcess(current_user_id, db_session)
-    user_info._user_geted_data = await _http_client.get_user_info(user_info.user_id)
-
-    if not user_info.check_user():
+    if not user_process.get_user_info(False, False):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user_info 
+    return user_process 

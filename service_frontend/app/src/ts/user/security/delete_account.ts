@@ -69,7 +69,7 @@ class DeleteAccount {
             }
 
             if (this.Delete) {
-                const response = await securedApiCall("/delete_account", {
+                const response = await securedApiCall("/api/settings/delete_account", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -4,16 +4,12 @@ from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
 from app.routes import auth, root, data
-from config import UHOST, UPORT
-from fastapi.staticfiles import StaticFiles
-from app.db.sql.settings import engine
-from app.db.sql.tables import base
+from app.db.sql.settings import get_db_session
 from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from shared.services.tools.limits import limiter
 from shared.services.middleware import MiddlewareProcess
-import asyncio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,7 +17,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
-
+    
 app = FastAPI(lifespan=lifespan)
 
 app.state.limiter = limiter
@@ -38,6 +34,6 @@ async def health_check():
     return {"status": "ok"}
 
 # app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
-app.include_router(auth.router)
-app.include_router(root.router)
+app.include_router(auth.router, prefix="/api/free")
+app.include_router(root.router, prefix="/api/free")
 app.include_router(data.router)

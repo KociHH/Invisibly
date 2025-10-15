@@ -61,31 +61,17 @@ server {
         add_header Cache-Control "public, max-age=604800, immutable";
     }
 
-    location /api/ {
-        proxy_pass http://free_service/;
+    # ADMIN
+    location ^~ /api/admin {
+        proxy_pass http://admin_service;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location ~ ^/(login|register|confirm_code|confirm_password)$ {
-        proxy_pass http://free_service;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location ~ ^/profile {
-        proxy_pass http://profile_service;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location ~ ^/chats {
+    # CHATS
+    location ^~ /api/chat {
         proxy_pass http://chat_service;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -93,23 +79,26 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location ~ ^/friends {
+    # FREE
+    location ^~ /api/free {
+        proxy_pass http://free_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # FRIENDS
+    location ^~ /api/friends {
         proxy_pass http://friends_service;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-
-    location ~ ^/settings {
-        proxy_pass http://settings_service;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location ~ ^/notifications {
+    
+    # NOTIFICATIONS
+    location ^~ /api/notifications {
         proxy_pass http://notifications_service;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -117,7 +106,17 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location ~ ^/security {
+    # PROFILE
+    location ^~ /api/profile {
+        proxy_pass http://profile_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # SECURITY
+    location ^~ /api/security {
         proxy_pass http://security_service;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -125,8 +124,9 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location ~ ^/admin {
-        proxy_pass http://admin_service;
+    # SETTINGS
+    location ^~ /api/settings {
+        proxy_pass http://settings_service;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -138,16 +138,23 @@ server {
         proxy_set_header Host $host;
     }
 
-    location ~ ^/(login|register|user|confirm_code|confirm_password)(/.*)?$ {
-        try_files $uri $uri.html $uri/ /index.html;
-    }
-
     location / {
-        try_files $uri $uri.html $uri/ /index.html;
-    }
-
-    location = /healthz {
-        add_header Content-Type text/plain;
-        return 200 'ok';
+        try_files
+        $uri
+        $uri.html
+        $uri/
+        /user$uri
+        /user$uri.html
+        /user$uri/
+        /user/friends$uri
+        /user/friends$uri.html
+        /user/friends$uri/
+        /user/notifications$uri
+        /user/notifications$uri.html
+        /user/notifications$uri/
+        /user/security$uri
+        /user/security$uri.html
+        /user/security$uri/
+        /index.html;
     }
 }

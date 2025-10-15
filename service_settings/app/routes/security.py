@@ -1,10 +1,13 @@
 from datetime import timedelta
+from operator import ge
 from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.params import Query
 from fastapi.responses import HTMLResponse
 import logging
-from app.crud.dependencies import get_current_user_id, template_not_found_user
+
+from httpx import get
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep, oauth2_scheme
 from fastapi import Depends
 from jose import jwt
 from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
@@ -25,18 +28,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # email
-@router.get("/change_email", response_class=HTMLResponse)
-async def change_email():
-    with open(path_html + "user/security/change_email.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    html_content = html_content.replace("{{email}}", "")
-
-    return HTMLResponse(content=html_content)
-
 @router.get("/change_email/data")
 async def change_email_data(
-    user_info: UserProcess = Depends(get_current_user_id)
+    user_info: UserProcess = Depends(get_current_user_dep),
+    token: str = Depends(oauth2_scheme)
     ):
     user_id = user_info.user_id
 
@@ -47,8 +42,7 @@ async def change_email_data(
         logger.error("Функция delete_token завершилась с ошибкой")
         raise HTTPException(status_code=500, detail="Server error")
 
-    rjp = RedisJsonsProcess(user_id, "UserRegistered")
-    obj: dict = await rjp.get_or_cache_user_info(user_info)
+    obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered", token)
     
     email = obj.get("email")
     ee = EncryptEmailProcess(email)
@@ -59,7 +53,7 @@ async def change_email_data(
 @router.post("/change_email", response_model=EmailSendVerify)
 async def processing_email(
     cef: ChangeEmailForm, 
-    user_info: UserProcess = Depends(get_current_user_id)
+    user_info: UserProcess = Depends(get_current_user_dep)
 ):
     current_user_id = user_info.user_id
 
@@ -97,17 +91,10 @@ async def processing_email(
         raise HTTPException(status_code=500, detail="Failed to send verification email")       
     
 # password
-@router.get("/change_password", response_class=HTMLResponse)
-async def change_password():
-    with open(path_html + "user/security/change_password.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    return html_content
-
 @router.post("/change_password", response_class=SuccessMessageAnswer)
 async def processing_password(
     np: ChangePassword,
-    user_info: UserProcess = Depends(get_current_user_id),
+    user_info: UserProcess = Depends(get_current_user_dep),
 ):
     current_user_id = user_info.user_id
 
@@ -146,17 +133,14 @@ async def processing_password(
             }
         
 # delete account
-@router.get("/delete_account", response_class=HTMLResponse)
+@router.get("/delete_account")
 async def delete_account():
-    with open(path_html + "user/security/delete_account.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    return HTMLResponse(html_content)
+    return {"message": "Browser request handler for get"}
  
 @router.post("/delete_account", response_model=SuccessMessageAnswer)
 async def processing_delete(
     da: DeleteAccount,
-    user_info: UserProcess = Depends(template_not_found_user),
+    user_info: UserProcess = Depends(require_existing_user_dep),
 ):
     current_user_id = user_info.user_id
 

@@ -46,10 +46,9 @@ async def register(
         access_token, _ = create_token(data={"user_id": new_user.user_id}, token_type="access")
         refresh_token, jti = create_token(data={"user_id": new_user.user_id}, token_type="refresh")
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неверный запрос")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid call")
     print(f"access_token: {access_token}\n refresh_token:{refresh_token}")
 
-    # бд
     await _http_client.create_UJWT_post({
         "user_id": new_user.user_id,
         "jti": jti,
@@ -88,7 +87,6 @@ async def login(user: UserLogin, db_session: AsyncSession = Depends(get_db_sessi
     access_token, _ = create_token(data={"user_id": db_logging.user_id}, token_type="access")
     refresh_token, jti = create_token(data={"user_id": db_logging.user_id}, token_type="refresh")
 
-    # бд
     await _http_client.create_UJWT_post({
         "user_id": db_logging.user_id,
         "jti": jti,

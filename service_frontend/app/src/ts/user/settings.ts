@@ -3,7 +3,7 @@ import { checkUpdateTokens, securedApiCall, clearTokensAndRedirectLogin } from "
 
 class SettingsProcess {
     private async SettingsExit(user_id: number | string) {
-        const response = await securedApiCall("/settings/data")
+        const response = await securedApiCall("/api/settings/settings/data")
         if (!response || !response.ok) {
             log_sending_to_page('Не удалось загрузить данные для настроек', "error");
             return;
@@ -28,7 +28,7 @@ class SettingsProcess {
         }
     
         button.addEventListener('click', async () => {
-            const response = await securedApiCall('/logout', {
+            const response = await securedApiCall('/api/settings/logout', {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',

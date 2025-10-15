@@ -8,7 +8,8 @@ from sqlalchemy import select
 from fastapi import Depends
 from app.db.sql.settings import get_db_session
 from kos_Htools.sql.sql_alchemy import BaseDAO
-from app.crud.dependencies import template_not_found_user
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+

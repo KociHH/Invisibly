@@ -29,11 +29,7 @@ class UserRegistered(base):
 
     __tablename__ = 'userRegistered'
 
-    user_id: Mapped[int] = mapped_column(
-        Integer, 
-        Sequence('user_id', start=1000, increment=1),
-        primary_key=True, 
-        )
+    user_id: Mapped[int] = mapped_column(BigInteger, autoincrement=True, primary_key=True)
     login: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     surname: Mapped[str] = mapped_column(String, nullable=True)

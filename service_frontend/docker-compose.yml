@@ -5,7 +5,7 @@ services:
       dockerfile: service_frontend/Dockerfile
 
     ports:
-      - "8080:80"
+      - "8081:80"
     environment:
       SERVICE_FREE_HOST: "${SERVICE_FREE_HOST}"
       SERVICE_FREE_PORT: "${SERVICE_FREE_PORT}"

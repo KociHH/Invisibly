@@ -12,7 +12,7 @@ form.addEventListener('submit', async (e) => {
     const password = (document.getElementById('password') as HTMLInputElement).value;
     const email = (document.getElementById('email') as HTMLInputElement).value;
 
-    const response = await fetch('/register', {
+    const response = await fetch('/api/free/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -33,7 +33,7 @@ form.addEventListener('submit', async (e) => {
             alert(data.message);
         }
     } else {
-        log_sending_to_page('Не удалось зарегестрироваться', "error");
+        log_sending_to_page('Не удалось зарегистрироваться', "error");
         return;
     }
 });

@@ -4,7 +4,7 @@ class ChatsProcess {
     private chatsData: Record<string | number, any> | null = null 
 
     private async getChats() {
-        const response = await securedApiCall("/chats/data")
+        const response = await securedApiCall("/api/chat/chats/data")
 
         if (response && response.ok) {
             this.chatsData = await response.json();

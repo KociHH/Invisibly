@@ -26,7 +26,7 @@ import {updateAccess, checkUpdateTokens, clearTokensAndRedirectLogin, ACCESS_TOK
         const password = (document.getElementById('password') as HTMLInputElement).value;
         const email = (document.getElementById('email') as HTMLInputElement).value;
 
-        const response = await fetch('/login', {
+        const response = await fetch('/api/free/login', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({

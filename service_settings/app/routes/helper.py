@@ -5,7 +5,7 @@ from app.db.sql.settings import get_db_session
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.user import EncryptEmailProcess, UserProcess, RedisJsonsProcess
-from app.crud.dependencies import template_not_found_user, get_current_user_id
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from app.schemas.change import ChangeEmail, SendPassword
 from app.schemas.system import SendEmail
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
@@ -20,7 +20,7 @@ router = APIRouter()
 @router.post("/change/email", response_model=SuccessMessageAnswer)
 async def change_email_post(
     change: ChangeEmail,
-    user_info: UserProcess = Depends(template_not_found_user)
+    user_info: UserProcess = Depends(require_existing_user_dep)
 ):
     rjp = RedisJsonsProcess(user_info.user_id, "change_email")
 

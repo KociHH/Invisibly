@@ -5,7 +5,7 @@ from sqlalchemy import and_
 from fastapi import Depends
 from app.crud.user import UserProcess, RedisJsonsProcess
 from shared.config.variables import path_html
-from app.crud.dependencies import  get_current_user_id
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from jose import jwt
 from shared.data.redis.instance import __redis_save_sql_call__
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
@@ -18,10 +18,10 @@ from app.services.http_client import _http_client
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-
+# friends
 @router.get("/notifications/friends/data")
 async def notifications_friends_data(
-    user_info: UserProcess = Depends(get_current_user_id),
+    user_info: UserProcess = Depends(get_current_user_dep),
 ):
     friends_requests_info = await _http_client.friends_requests_info(user_info.user_id, ["request_user_id", "send_at"])
 
@@ -43,4 +43,9 @@ async def notifications_friends_data(
 
     return result_data
 
-    
+# system
+@router.get("/notifications/system/data")
+async def notifications_friends_data(
+    user_info: UserProcess = Depends(get_current_user_dep),
+):
+    pass

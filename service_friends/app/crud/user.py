@@ -17,7 +17,6 @@ class UserProcess(UserCRUD):
         super().__init__(user_id=user_id, db_session=db_session)
         self.friend_user = BaseDAO(FriendUser, db_session)
         self.send_friend_request = BaseDAO(SendFriendRequest, db_session)
-        self._cached_user_info = None
 
     async def find_friend_by_param(
         self, 
@@ -68,17 +67,8 @@ class UserProcess(UserCRUD):
         user_id: int | str | None = None
         ) -> dict[str, Any] | None:
         try:
-            if not friend_id:
-                if not self.check_user():
-                    return None
-            
-                user_obj = self._cached_user_info
-                if not user_obj:
-                    user_obj = await self._user_geted_data 
-                    self._cached_user_info = user_obj
-            else:
-                user_obj = await self.friend_user.get_one(
-                    and_(FriendUser.friend_id == friend_id, FriendUser.user_id == user_id or self.user_id))
+            user_obj = await self.friend_user.get_one(
+                and_(FriendUser.friend_id == friend_id, FriendUser.user_id == user_id or self.user_id))
 
             info = {
                 "user_id": user_obj.user_id,

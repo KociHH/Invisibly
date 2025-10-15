@@ -4,22 +4,24 @@ from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
 from app.routes import profile, user_profile
-from config import UHOST, UPORT
-from fastapi.staticfiles import StaticFiles
-from app.db.sql.settings import engine
-from app.db.sql.tables import base
+from app.db.sql.settings import get_db_session
 from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from shared.services.tools.limits import limiter
 from shared.services.middleware import MiddlewareProcess
+from app.services.http_client import _http_client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.http_client = _http_client.free
     yield
+
+    await app.state.http_client.close()
+    logger.info("Service stoped!")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -32,6 +34,5 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(SlowAPIMiddleware)
 
-# app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
-app.include_router(profile.router)
-app.include_router(user_profile.router)
+app.include_router(profile.router, prefix="/api/profile")
+app.include_router(user_profile.router, prefix="/api/profile")

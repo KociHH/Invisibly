@@ -2,7 +2,7 @@ import { log_sending_to_page } from "../utils/other.js";
 import { checkUpdateTokens, securedApiCall } from "../utils/secured.js";
 
 async function loadUserProfile() {
-    const response = await securedApiCall('/profile/data');
+    const response = await securedApiCall('/api/profile/profile/data');
     if (!response || !response.ok) {
         log_sending_to_page('Не удалось загрузить данные профиля', "error");
         return;

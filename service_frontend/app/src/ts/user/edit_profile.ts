@@ -59,7 +59,7 @@ class EditProfile {
     private originalBio: string = ""
 
     private async valuesElementsProfile() {
-        const response = await securedApiCall("/edit_profile/data");
+        const response = await securedApiCall("/api/profile/edit_profile/data");
         if (!response || !response.ok) {
             log_sending_to_page('Не удалось загрузить данные для редактирования профиля', "error");
             return;
@@ -80,7 +80,7 @@ class EditProfile {
             if (this.isChanges) {
                 this.isChanges = false
 
-                const response = await securedApiCall("/edit_profile", {
+                const response = await securedApiCall("/api/profile/edit_profile", {
                     method: "POST",
                     headers: {
                         'Content-Type': 'application/json',

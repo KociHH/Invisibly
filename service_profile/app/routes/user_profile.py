@@ -3,11 +3,12 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.params import Query
 from fastapi.responses import HTMLResponse
 import logging
+from httpx import get
 from sqlalchemy import and_
 from app.crud.user import UserProcess
 from shared.config.variables import path_html
 from fastapi import Depends
-from app.crud.dependencies import  template_not_found_user, get_current_user_id
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from jose import jwt
 from shared.data.redis.instance import __redis_save_sql_call__
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,12 +20,10 @@ from app.services.http_client import _http_client
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-
 @router.get("/user/profile/data")
 async def friend_profile_data(
     profile_id: str = Query(..., description='id профиля пользователя'),
-    user_info: UserProcess = Depends(get_current_user_id),
-    db_session: AsyncSession = Depends(get_db_session),
+    user_info: UserProcess = Depends(get_current_user_dep),
 ):
     if not profile_id.isdigit:
         raise HTTPException(status_code=405, detail="Page not found")
@@ -55,7 +54,7 @@ async def friend_profile_data(
 
 @router.post("/user/profile")
 async def processing_friend_profile(
-    user_info: UserProcess = Depends(get_current_user_id),
+    user_info: UserProcess = Depends(get_current_user_dep),
     db_session: AsyncSession = Depends(get_db_session),
 ):
     pass

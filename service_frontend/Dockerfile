@@ -6,7 +6,7 @@ COPY service_frontend/app/package*.json ./
 
 RUN npm ci
 
-COPY service_frontend/app .
+COPY service_frontend/app ./
 
 RUN npm run build
 

@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-redis_base = Redis()
+redis_base = Redis(host="redis")
 redis_base_for_list = Redis(decode_responses=True)
 
 redis_save_sql_call = 'save_sql_call'

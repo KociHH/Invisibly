@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 import logging
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.config.variables import path_html, PSWD_context
 from app.crud.user import CreateTable, UserProcess
-from app.crud.dependencies import get_current_user_id
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from app.db.sql.settings import get_db_session
 from app.schemas.data import CreateUJWT
 
@@ -15,13 +14,10 @@ logger = logging.getLogger(__name__)
 @router.post("/create_UJWT")
 async def create_UJWT_post(
     cujwt: CreateUJWT,
-    user_process: UserProcess = Depends(get_current_user_id),
     db_session: AsyncSession = Depends(get_db_session)
 ):
-    if user_process.user_id != cujwt.user_id:
-        raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
-
     create_tab = CreateTable(db_session)
+    
     return await create_tab.create_UJWT({
         "user_id": cujwt.user_id,
         "jti": cujwt.jti,

@@ -8,29 +8,20 @@ from app.crud.user import UserProcess
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.db.sql.settings import get_db_session
-from app.crud.dependencies import template_not_found_user, get_current_user_id
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep, oauth2_scheme
+from app.services.http_client import _http_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-@router.get("/settings", response_class=HTMLResponse)
-async def user_settings():
-    with open(path_html + "user/settings.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    html_content = html_content.replace("{{name}}", "")
-    html_content = html_content.replace("{{surname}}", "")
-    html_content = html_content.replace("{{login}}", "")
-    html_content = html_content.replace("{{bio_content}}", "")
-
-    return HTMLResponse(content=html_content)
     
 @router.get("/settings/data")
-async def user_settings_data(user_info: UserProcess = Depends(get_current_user_id)):
+async def user_settings_data(
+    user_info: UserProcess = Depends(get_current_user_dep),
+    token: str = Depends(oauth2_scheme)
+    ):
     user_id = user_info.user_id
     
-    rjp = RedisJsonsProcess(user_id, "UserRegistered")
-    obj: dict = await rjp.get_or_cache_user_info(user_info)
+    obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered", token)
 
     return {
         "name": obj.get('name') or "N/A",
@@ -42,7 +33,7 @@ async def user_settings_data(user_info: UserProcess = Depends(get_current_user_i
 @router.post("/logout")
 async def user_logout(
     se: SettingsExit,
-    user_info: UserProcess = Depends(template_not_found_user)
+    user_info: UserProcess = Depends(require_existing_user_dep)
     ):
     if se.user_id != user_info.user_id:
         raise HTTPException(status_code=403, detail="Access denied: you can only logout from your own account")

@@ -1,12 +1,14 @@
+import re
 from fastapi import APIRouter, HTTPException, Body
 from fastapi.params import Query
 from fastapi.responses import HTMLResponse
 import logging
 import uuid
 from fastapi import Depends
+from httpx import get
 from shared.config.variables import path_html, PSWD_context, curretly_msk
 from app.crud.user import UserProcess
-from app.crud.dependencies import template_not_found_user, get_current_user_id
+from app.crud.dependencies import get_current_user_dep, require_existing_user_dep, oauth2_scheme
 from app.schemas.code import ResendCode, SendCode
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
 from app.services.rabbitmq.client import EmailRpcClient
@@ -14,6 +16,7 @@ from app.services.jwt import decode_jwt_token, create_token
 from datetime import timedelta
 from app.crud.user import RedisJsonsProcess
 from shared.data.redis.instance import __redis_save_jwt_token__
+from app.services.http_client import _http_client
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -24,13 +27,14 @@ router = APIRouter()
 async def confirm_code_data(
     rc: ResendCode = Depends(),
     cause: str = Query(..., description="Причина вызова confirm_code"),
-    user_info: UserProcess = Depends(get_current_user_id),
+    user_info: UserProcess = Depends(get_current_user_dep),
+    token: str = Depends(oauth2_scheme)
     ):
     
     send_code = False
 
     rjp = RedisJsonsProcess(user_info.user_id, cause)
-    user = await rjp.get_or_cache_user_info(user_info, ["email"], False)
+    user: dict = await _http_client.get_or_cache_user_info(user_info.user_id, "UserRegistered", token, ["email"], False)
     if user:
         email = user.get("email")
 
@@ -114,7 +118,7 @@ async def confirm_code_data(
 @router.post("/confirm_code", response_model=SuccessAnswer)
 async def check_code(
     rc: SendCode, 
-    user_info: UserProcess = Depends(template_not_found_user)
+    user_info: UserProcess = Depends(require_existing_user_dep)
     ):
     verification_token = decode_jwt_token(rc.token)
 
@@ -136,7 +140,7 @@ async def check_code(
 @router.post("/confirm_password", response_model=SuccessMessageAnswer)
 async def processing_password(
     sp: dict,
-    user_info: UserProcess = Depends(get_current_user_id),
+    user_info: UserProcess = Depends(get_current_user_dep),
 ): 
     data_token = decode_jwt_token(sp.token)
 
@@ -160,7 +164,7 @@ async def processing_password(
         return {
             "success": True,
             "message": "Confirm password"
-            }
+        }
     
 
 

@@ -5,26 +5,27 @@ from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
 from app.routes import notifications
-from config import UHOST, UPORT
-from fastapi.staticfiles import StaticFiles
-from app.db.sql.settings import engine
-from app.db.sql.tables import base
+from app.db.sql.settings import get_db_session
 from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from shared.services.tools.limits import limiter
 from shared.services.middleware import MiddlewareProcess
 from app.services.rabbitmq.server import rabbit_init
+from app.services.http_client import _http_client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.http_client = _http_client.free
+    
     rabbit_server = asyncio.create_task(rabbit_init())
     logger.info("RebbitMQ success init")
     yield
 
+    await app.state.http_client.close()
     rabbit_server.cancel()
     try:
         await rabbit_server
@@ -44,4 +45,4 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 app.add_middleware(SlowAPIMiddleware)
 
 # app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
-app.include_router(notifications.router)
+app.include_router(notifications.router, prefix="/api/notifications")

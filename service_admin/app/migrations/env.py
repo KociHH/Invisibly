@@ -43,7 +43,6 @@ def include_name(name, type_, parent_names):
     return True
 
 def run_migrations_offline() -> None:
-    context.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema}"'))
     context.configure(
         url=POSTGRES_URL,
         target_metadata=target_metadata,
@@ -64,6 +63,7 @@ def do_run_migrations(connection):
         version_table_schema=schema
         )
     with context.begin_transaction():
+        context.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema}"'))
         context.run_migrations()
 
 async def run_async_migrations():

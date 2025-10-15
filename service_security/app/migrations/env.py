@@ -55,6 +55,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 def do_run_migrations(connection):
+    
     context.configure(
         connection=connection, 
         target_metadata=target_metadata,
@@ -63,6 +64,7 @@ def do_run_migrations(connection):
         version_table_schema=schema
         )
     with context.begin_transaction():
+        context.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema}"'))
         context.run_migrations()
 
 async def run_async_migrations():
