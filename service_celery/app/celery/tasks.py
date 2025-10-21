@@ -47,28 +47,39 @@ def check_jwt_token_date():
 @celery_app.task
 def cleaning_expiring_json():
     try:
-        save_sql_call_data: dict | None = __redis_save_sql_call__.get_cached()
-        if not save_sql_call_data:
+        redis_data: dict | None = __redis_save_sql_call__.get_cached() or {}
+        if not redis_data:
             return
-        
-        keys_to_remove = []
-        for user_key, value in save_sql_call_data.items():
+
+        now = curretly_msk()
+        keys_to_remove: list[str] = []
+
+        for key, value in list(redis_data.items()):
             if not isinstance(value, dict) or 'exp' not in value:
-                logger.warning(f"Некорректная структура данных для ключа {user_key}")
+                logger.warning(f"Некорректная структура данных для ключа {key}")
                 continue
-                
-            if value['exp'] <= curretly_msk():
-                keys_to_remove.append(user_key)
-        
+
+            exp = value['exp']
+            try:
+                if isinstance(exp, (int, float)):
+                    expired = exp <= int(now.timestamp())
+                else:
+                    expired = exp <= now
+            except Exception as e:
+                logger.warning(f"Не удалось сравнить exp для {key}: {e}")
+                continue
+
+            if expired:
+                keys_to_remove.append(key)
+
         if keys_to_remove:
-            for key in keys_to_remove:
-                save_sql_call_data.pop(key, None)
-            
-            __redis_save_sql_call__.cached(data=save_sql_call_data)
+            for k in keys_to_remove:
+                redis_data.pop(k, None)
+            __redis_save_sql_call__.cached(data=redis_data)
             logger.info(f"Удалено {len(keys_to_remove)} истекших записей")
-        
-        return save_sql_call_data
-        
+
+        return redis_data
+
     except Exception as e:
-        logger.error(f"Ошибка в функции cleaning_expiring_json:\n {e}")
+        logger.exception(f"Ошибка в функции cleaning_expiring_json: {e}")
         return None

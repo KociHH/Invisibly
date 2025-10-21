@@ -2,7 +2,7 @@ from typing import Any
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-class UserFilter(BaseModel):
+class FindUserByParam(BaseModel):
     param_name: str
     param_value: str | Any
 
@@ -12,6 +12,7 @@ class UserFullInfo(BaseModel):
     w_email_hash: bool = False
 
 class UserUpdate(BaseModel):
+    user_id: str | int
     login: str | None = None
     name: str | None = None
     surname: str | None = None

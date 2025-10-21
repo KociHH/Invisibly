@@ -1,6 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
+from shared.services.tools.variables import names_services
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +32,7 @@ class ConstructorUrl:
         self.build_urls()
 
     def build_urls(self):
-        services = [
-            'FREE', 'ADMIN', 'CHAT', 'FRIENDS', 
-            'NOTIFICATIONS', 'PROFILE', 'SECURITY', 'SETTINGS'
-        ]
-
-        for service in services:
+        for service in names_services:
             host = l(f"SERVICE_{service}_HOST")
             port = l(f"SERVICE_{service}_PORT")
 

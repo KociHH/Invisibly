@@ -3,8 +3,13 @@ services:
     build:
       context: ..
       dockerfile: service_friends/Dockerfile
-
     ports: 
       - "${SERVICE_FRIENDS_PORT}:${SERVICE_FRIENDS_PORT}"
     env_file:
       - "../.env"
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    external: true

@@ -10,17 +10,7 @@ logger = logging.getLogger(__name__)
 
 class AsyncHttpClient(ServiceFreeHttpClient, ServiceFriendsHttpClient):
     def __init__(self):
-        self.free = ServiceFreeHttpClient(free_url=get_specific_url("FREE"))
-        self.friends = ServiceFriendsHttpClient(friends_url=get_specific_url("FRIENDS"))
-
-    async def get_or_cache_user_info(
-        self, 
-        user_id: int | str, 
-        handle: str, 
-        token: str,
-        return_items: list | None = None, 
-        save_sql_redis: bool = True
-        ):
-        return await self.free.get_or_cache_user_info(user_id, handle, token, return_items, save_sql_redis)
+        self.free = ServiceFreeHttpClient(free_url=get_specific_url("FREE"), iss="profile")
+        self.friends = ServiceFriendsHttpClient(friends_url=get_specific_url("FRIENDS"), iss="profile")
 
 _http_client = AsyncHttpClient()

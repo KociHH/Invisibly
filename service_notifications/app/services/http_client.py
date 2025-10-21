@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class AsyncHttpClient(ServiceFreeHttpClient, ServiceFriendsHttpClient):
     def __init__(self):
-        self.free = ServiceFreeHttpClient(free_url=get_specific_url("FREE"))
-        self.friends = ServiceFriendsHttpClient(friends_url=get_specific_url("FRIENDS"))
+        self.free = ServiceFreeHttpClient(free_url=get_specific_url("FREE"), iss="notifications")
+        self.friends = ServiceFriendsHttpClient(friends_url=get_specific_url("FRIENDS"), iss="notifications")
 
 _http_client = AsyncHttpClient()

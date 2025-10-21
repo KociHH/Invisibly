@@ -2,7 +2,7 @@ from typing import Any
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from shared.crud.redis.create import RedisJsons
+from shared.crud.redis.create import RedisJsonsUser
 from shared.data.redis.instance import __redis_save_friends__
 from app.db.sql.tables import FriendUser, SendFriendRequest
 from shared.services.tools.other import full_name_constructor
@@ -18,8 +18,9 @@ class UserProcess(UserCRUD):
         self.friend_user = BaseDAO(FriendUser, db_session)
         self.send_friend_request = BaseDAO(SendFriendRequest, db_session)
 
+    @staticmethod
     async def find_friend_by_param(
-        self, 
+        db_session: AsyncSession,
         param_name: str, 
         param_value: str | Any
         ) -> dict:
@@ -33,10 +34,9 @@ class UserProcess(UserCRUD):
             return {'error': f"Param {param_name} not found"}
         
         column_to_search = attr[param_name]
+        friend_dao = BaseDAO(FriendUser, db_session)
 
-        user_dao = BaseDAO(FriendUser, self.db_session)
-
-        user_info = await user_dao.get_one(column_to_search == param_value)
+        user_info = await friend_dao.get_one(column_to_search == param_value)
         if user_info:
             return {
                 "user_id": user_info.user_id,
@@ -45,14 +45,16 @@ class UserProcess(UserCRUD):
             }
         return {}
 
-    async def update_friend(self, update_data: dict) -> bool:
+    async def update_friend(
+        self, 
+        update_data: dict,
+        ) -> bool:
         if not update_data: # {}
+            logger.error(f"Пустой update_data: {update_data}")
             return False
-
-        friend_dao = BaseDAO(FriendUser, self.db_session)
         
         try:
-            success = await friend_dao.update(
+            success = await self.friend_user.update(
                 FriendUser.user_id == self.user_id, 
                 **update_data
                 )
@@ -64,18 +66,16 @@ class UserProcess(UserCRUD):
     async def get_friend_info(
         self, 
         friend_id: int | str,
-        user_id: int | str | None = None
         ) -> dict[str, Any] | None:
         try:
             user_obj = await self.friend_user.get_one(
-                and_(FriendUser.friend_id == friend_id, FriendUser.user_id == user_id or self.user_id))
+                and_(FriendUser.friend_id == friend_id, FriendUser.user_id == self.user_id))
 
             info = {
                 "user_id": user_obj.user_id,
                 "friend_id": user_obj.friend_id,
                 "addition_number": user_obj.addition_number,
             }
-
             return info
             
         except Exception as e:
@@ -93,8 +93,6 @@ class UserProcess(UserCRUD):
             "send_at": SendFriendRequest.send_at
         }
         
-        friends_dao = BaseDAO(SendFriendRequest, self.db_session)
-        
         if fields:
             invalid_fields = [f for f in fields if f not in available_fields]
             if invalid_fields:
@@ -104,7 +102,7 @@ class UserProcess(UserCRUD):
         else:
             columns = list(available_fields.values())
 
-        friends_requests = await friends_dao.get_all_column_values(
+        friends_requests = await self.send_friend_request.get_all_column_values(
             columns,
             SendFriendRequest.user_id == user_id,
         )
@@ -112,7 +110,7 @@ class UserProcess(UserCRUD):
         return friends_requests
 
 
-class RedisJsonsProcess(RedisJsons):
+class RedisJsonsProcess(RedisJsonsUser):
     def __init__(self, user_id: int | str, handle: str) -> None:
         super().__init__(user_id, handle)
 

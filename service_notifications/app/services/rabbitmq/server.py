@@ -103,7 +103,7 @@ async def rabbit_init():
         queue = await channel.declare_queue(NotificationsMQ.key, durable=True)
 
         await queue.consume(mq.on_rpc_request)
-        logger.info("Started User RPC Server in Service Free.")
+        logger.info("Started User RPC Server in Service Notifications.")
         await asyncio.Future()
 
     except Exception as e:

@@ -3,8 +3,13 @@ services:
     build:
       context: ..
       dockerfile: service_notifications/Dockerfile
-    
     ports: 
       - "${SERVICE_NOTIFICATIONS_PORT}:${SERVICE_NOTIFICATIONS_PORT}"
     env_file:
       - "../.env"
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    external: true

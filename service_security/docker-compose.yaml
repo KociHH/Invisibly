@@ -3,8 +3,14 @@ services:
     build:
       context: ..
       dockerfile: service_security/Dockerfile
-    
     ports: 
       - "${SERVICE_SECURITY_PORT}:${SERVICE_SECURITY_PORT}"
     env_file:
       - "../.env"
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    external: true
+

@@ -10,7 +10,7 @@ from httpx import get
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep, oauth2_scheme
 from fastapi import Depends
 from jose import jwt
-from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
+from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_code_token__
 from app.schemas.account import DeleteAccount
 from app.schemas.change import ChangePassword
 from app.schemas.change import ChangeEmailForm
@@ -42,7 +42,7 @@ async def change_email_data(
         logger.error("Функция delete_token завершилась с ошибкой")
         raise HTTPException(status_code=500, detail="Server error")
 
-    obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered", token)
+    obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered")
     
     email = obj.get("email")
     ee = EncryptEmailProcess(email)
@@ -63,12 +63,12 @@ async def processing_email(
     handle_cause = "change_email"
 
     rjp = RedisJsonsProcess(current_user_id, handle_cause)
-    ee = EncryptEmailProcess(user_info.db_session)
+    ee = EncryptEmailProcess(cef.email)
 
-    tokens: dict | None = __redis_save_jwt_token__.get_cached()
+    tokens: dict | None = __redis_save_jwt_code_token__.get_cached()
     token_info = tokens.get(rjp.name_key) if tokens else False
 
-    db_email_hash, _ = await ee.email_verification(user_info.db_session, current_user_id)
+    db_email_hash, _ = await ee.email_verification(current_user_id)
     if db_email_hash:
         return {
             "success": False, 

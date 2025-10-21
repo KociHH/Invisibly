@@ -8,9 +8,6 @@ l = load_from_env
 
 POSTGRES_URL = l("POSTGRES_URL")
 
-UPORT = int(l("UPORT"))
-UHOST = l("UHOST")
-
 ALGORITHM = l("ALGORITHM")
 SECRET_KEY = l("SECRET_KEY")
 SECRET_KEY_SIZE = int(l("SECRET_KEY_SIZE"))

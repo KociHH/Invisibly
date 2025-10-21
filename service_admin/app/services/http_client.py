@@ -9,6 +9,6 @@ logger = logging.getLogger(__name__)
 
 class AsyncHttpClient(ServiceFreeHttpClient):
     def __init__(self):
-        super().__init__(free_url=get_specific_url("FREE"))
+        super().__init__(free_url=get_specific_url("FREE"), iss="admin")
 
 _http_client = AsyncHttpClient()

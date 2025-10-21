@@ -1,14 +1,16 @@
 from datetime import timedelta
+from email.policy import HTTP
 from typing import Any
-from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_token__
+from redis import Redis
+from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_code_token__, dif_key
 from shared.config.variables import curretly_msk
 import logging
-from shared.crud.sql.user import UserCRUD
-from fastapi import  HTTPException
+from fastapi import HTTPException
+from kos_Htools.redis_core import RedisBase, RedisDifKey
 
 logger = logging.getLogger(__name__)
 
-class RedisJsons:
+class RedisJsonsUser:
     def __init__(self, user_id: int | str, handle: str) -> None:
         self.handle = handle
         self.user_id = user_id
@@ -23,7 +25,7 @@ class RedisJsons:
         Использует __redis_save_sql_call__
         """
 
-        redis_data: dict = __redis_save_sql_call__.get_cached()
+        redis_data: dict = __redis_save_sql_call__.get_cached() or {}
         
         user_data_found = False
 
@@ -48,7 +50,7 @@ class RedisJsons:
         exp: время истечения *в секундах
         """
 
-        redis_data: dict | None = __redis_save_sql_call__.get_cached()
+        redis_data: dict = __redis_save_sql_call__.get_cached() or {}
         obj = redis_data.get(self.name_key)
         if not obj:
             redis_data[self.name_key] = {}
@@ -60,6 +62,7 @@ class RedisJsons:
         expiry_time = curretly_msk() + timedelta(seconds=exp)
         obj["exp"] = expiry_time.isoformat()
         __redis_save_sql_call__.cached(data=redis_data, ex=None)
+        print(data)
         return data
 
     @staticmethod
@@ -73,7 +76,7 @@ class RedisJsons:
         items: [id, name, ...]
         key_data: user_id-edit_profile и тд
         """
-        base_data: dict | None = __redis_save_sql_call__.get_cached()
+        base_data: dict = __redis_save_sql_call__.get_cached() or {}
         if not key_data in base_data.keys() or not base_data:
             return {"redis": "empty"}
 
@@ -84,15 +87,77 @@ class RedisJsons:
 
     def delete_token(self):
         try:
-            jwt_tokens: dict | None = __redis_save_jwt_token__.get_cached()
+            jwt_tokens: dict = __redis_save_jwt_code_token__.get_cached() or {}
 
             if jwt_tokens:
                 token_info: dict | None = jwt_tokens.get(self.name_key)
                 if token_info:
                     jwt_tokens.pop(self.name_key)
-                    __redis_save_jwt_token__.cached(jwt_tokens)
+                    __redis_save_jwt_code_token__.cached(jwt_tokens)
     
         except Exception as e:
             logger.error(f"Внезапная ошибка: {e}")
             return False
         return True
+    
+    
+class RedisJsonsServerToken:
+    def __init__(
+        self,
+        jti: str,
+    ) -> None:
+        self.jti = jti
+        self.payload: dict | None = None
+        self.__redis_save_jwt_interservice_token__ = RedisBase(self.jti)
+        
+    def save_interservice_token(
+        self, 
+        token: str, 
+        ) -> dict:
+        """
+        Сохраняет как per-to-key и проверяет на существование токена
+
+        token: дата для сохранения
+        """
+        redis_data: dict = self.__redis_save_jwt_interservice_token__.get_cached() or {}
+        if not redis_data:
+            result_data = {
+                "token": token,
+            }
+            self.__redis_save_jwt_interservice_token__.cached(data=result_data)
+            return result_data
+        return {}
+    
+    def get_interservice_token(self) -> dict:
+        """
+        Получает конкретный ключ по своим атрибутам
+        """
+        redis_data: dict = self.__redis_save_jwt_interservice_token__.get_cached() or {}
+        return redis_data
+    
+    def delete_interservice_token(self) -> bool:
+        """
+        Удаляет ключ. В системе не используется, только в админке
+        """
+        try:
+            redis_data: dict = self.__redis_save_jwt_interservice_token__.get_cached()
+
+            if redis_data:
+                self.__redis_save_jwt_interservice_token__.delete_key()
+            return True
+        
+        except Exception as e:
+            logger.error(f"Внезапная ошибка: {e}")
+            return False
+    
+    def consume_interservice_token(self, _redis_client: Redis | None = None) -> bool:
+        """ 
+        Удаляет и возвращает сам ключ, в других ситуациях False 
+        """
+        try:
+            dif_key.redis = _redis_client
+            result = dif_key.__redis_consume_key__(self.jti)
+            return result
+        except Exception as e:
+            logger.error(f"Ошибка при потреблении межсервисного токена {self.jti}: {e}")
+            return False

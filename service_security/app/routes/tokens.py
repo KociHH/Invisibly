@@ -13,7 +13,6 @@ from app.crud.dependencies import get_current_user_dep, require_existing_user_de
 from app.schemas.token import DeleteTokenRedis, RefreshTokenRequest
 from app.schemas.response_model import EventTokensResponse
 
-sistem_err = "Server error"
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ async def refresh_access_update(
         verify = verify_refresh_token(request_body.refresh_token)
         if not verify:
             logger.error('Не вернулось значение функции verify_refresh_token')
-            raise HTTPException(status_code=500, detail=sistem_err)
+            raise HTTPException(status_code=500, detail="Server error")
 
         user_id, jti = verify
         token_dao = BaseDAO(UserJWT, db_session)
@@ -52,7 +51,7 @@ async def refresh_access_update(
 
         if not any(new_access_token and new_refresh_token and new_jti):
             logger.error("Не вернулось значение (create_access_token, create_refresh_token)")
-            raise HTTPException(status_code=500, detail=sistem_err)
+            raise HTTPException(status_code=500, detail="Server error")
 
         create_sql = CreateTable(db_session)
         await create_sql.create_UJWT(save_elements={
@@ -74,7 +73,7 @@ async def refresh_access_update(
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     except Exception as e:
         logger.error(f"Ошибка при обновлении токена: {e}")
-        raise HTTPException(status_code=500, detail=sistem_err)
+        raise HTTPException(status_code=500, detail="Server error")
 
 @router.post("/access", response_model=EventTokensResponse)
 async def access_update(request_body: RefreshTokenRequest):
@@ -82,14 +81,14 @@ async def access_update(request_body: RefreshTokenRequest):
         verify = verify_refresh_token(request_body.refresh_token)
         if not verify:
             logger.error('Не вернулось значение функции verify_refresh_token')
-            raise HTTPException(status_code=500, detail=sistem_err)
+            raise HTTPException(status_code=500, detail="Server error")
     
         user_id, _ = verify
         access_token, _ = create_token(data={"user_id": user_id})
 
         if not access_token:
             logger.error("Не вернулось значение (create_access_token)")
-            raise HTTPException(status_code=500, detail=sistem_err)
+            raise HTTPException(status_code=500, detail="Server error")
     
         return {
             "access_token": access_token, 
@@ -104,7 +103,7 @@ async def access_update(request_body: RefreshTokenRequest):
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     except Exception as e:
         logger.error(f'Внезапная ошибка в функции access_update:\n {e}')
-        raise HTTPException(status_code=500, detail=sistem_err) 
+        raise HTTPException(status_code=500, detail="Server error") 
 
 @router.post("/check_update_tokens")    
 async def check_update_tokens(

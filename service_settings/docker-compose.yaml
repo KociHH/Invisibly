@@ -3,8 +3,13 @@ services:
     build:
       context: ..
       dockerfile: service_settings/Dockerfile
-    
     ports: 
       - "${SERVICE_SETTINGS_PORT}:${SERVICE_SETTINGS_PORT}"
     env_file:
       - "../.env"
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    external: true

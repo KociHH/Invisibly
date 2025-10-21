@@ -9,6 +9,8 @@ services:
         retries: 5
       volumes:
         - redis_data:/data
+      networks: 
+       - app_net
 
     postgres:
       image: postgres:15-alpine
@@ -17,14 +19,15 @@ services:
         POSTGRES_USER: "${PG_NAME}"
         POSTGRES_PASSWORD: "${PG_PASSWORD}"
       healthcheck:
-
-        test: ["CMD-SHELL", "pg_isready -U postgres -d Invisibly || exit 1"]
+        test: ["CMD-SHELL", "pg_isready -U ${PG_NAME} -d ${PG_DB_NAME} || exit 1"]
         interval: 10s
         timeout: 5s
         retries: 5
       restart: unless-stopped
       volumes:
         - postgres_data:/var/lib/postgresql/data
+      networks: 
+       - app_net
 
     rabbitmq:
       image: rabbitmq:3-management-alpine
@@ -39,24 +42,35 @@ services:
       restart: unless-stopped
       volumes:
         - rabbitmq_data:/var/lib/rabbitmq
+      ports:
+      - "5672:5672"
+      - "15672:15672"
+      networks: 
+       - app_net
 
     service_free:
       build:
         context: .
         dockerfile: service_free/Dockerfile
-
       ports: 
         - "${SERVICE_FREE_PORT}:${SERVICE_FREE_PORT}"
       env_file:
         - ".env"
       depends_on:
-        - postgres
+        postgres:
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
       healthcheck:
         test: ["CMD", "curl", "-f", "http://localhost:${SERVICE_FREE_PORT}/health"]
         interval: 15s
         timeout: 10s
         retries: 5
         start_period: 30s
+      networks: 
+       - app_net
 
     service_admin:
       build:
@@ -69,7 +83,13 @@ services:
         - ".env"
       depends_on:
         postgres:
-          condition: service_started
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
+      networks: 
+       - app_net
 
     service_chat:
       build:
@@ -82,78 +102,108 @@ services:
         - ".env"
       depends_on:
         postgres:
-          condition: service_started
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
+      networks: 
+       - app_net
 
     service_friends:
       build:
         context: .
         dockerfile: service_friends/Dockerfile
-
       ports: 
         - "${SERVICE_NOTIFICATIONS_PORT}:${SERVICE_NOTIFICATIONS_PORT}"
       env_file:
         - ".env"
       depends_on:
         postgres:
-          condition: service_started
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
+      networks: 
+       - app_net
 
     service_notifications:
       build:
         context: .
         dockerfile: service_notifications/Dockerfile
-      
       ports: 
         - "${SERVICE_PROFILE_PORT}:${SERVICE_PROFILE_PORT}"
       env_file:
         - ".env"
       depends_on:
         postgres:
-          condition: service_started
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
+      networks:
+        - app_net
 
     service_profile:
       build:
         context: .
         dockerfile: service_profile/Dockerfile
-      
       ports: 
         - "${SERVICE_FRIENDS_PORT}:${SERVICE_FRIENDS_PORT}"
       env_file:
         - ".env"
       depends_on:
         postgres:
-          condition: service_started
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
+      networks: 
+       - app_net
 
     service_security:
       build:
         context: .
         dockerfile: service_security/Dockerfile
-      
       ports: 
         - "${SERVICE_SECURITY_PORT}:${SERVICE_SECURITY_PORT}"
       env_file:
         - ".env"
       depends_on:
         postgres:
-          condition: service_started
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
+      networks: 
+       - app_net
 
     service_settings:
       build:
         context: .
         dockerfile: service_settings/Dockerfile
-      
       ports: 
         - "${SERVICE_SETTINGS_PORT}:${SERVICE_SETTINGS_PORT}"
       env_file:
         - ".env"
       depends_on:
         postgres:
-          condition: service_started
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
+      networks: 
+       - app_net
 
     service_frontend:
       build:
         context: .
         dockerfile: service_frontend/Dockerfile
-
       ports:
         - "8080:80"
       environment:
@@ -180,9 +230,14 @@ services:
 
         SERVICE_SETTINGS_HOST: "${SERVICE_SETTINGS_HOST}"
         SERVICE_SETTINGS_PORT: "${SERVICE_SETTINGS_PORT}"
+      networks: 
+       - app_net
 
 volumes:
   postgres_data:
   rabbitmq_data:
   redis_data:
 
+networks:
+  app_net:
+    driver: bridge

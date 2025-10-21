@@ -6,8 +6,8 @@ import hashlib
 from typing import Any
 from shared.crud.sql.user import UserCRUD
 from shared.crud.sql.user import EncryptEmail
-from shared.crud.redis.create import RedisJsons
-from shared.data.redis.instance import __redis_save_jwt_token__
+from shared.crud.redis.create import RedisJsonsUser
+from shared.data.redis.instance import __redis_save_jwt_code_token__
 from shared.config.variables import curretly_msk
 import logging
 from app.services.http_client import _http_client
@@ -46,7 +46,7 @@ class EncryptEmailProcess(EncryptEmail):
             return visible_start + hidden_part + visible_end + email_domain
 
     async def email_verification(self, except_uid: int | str | None = None):
-        email_hash = self.hash_email(self.email)
+        email_hash = self.hash_email()
 
         db_email_hash = await _http_client.find_user_by_param("email_hash", email_hash) 
         if except_uid:
@@ -56,7 +56,7 @@ class EncryptEmailProcess(EncryptEmail):
         return db_email_hash, email_hash
 
 
-class RedisJsonsProcess(RedisJsons):
+class RedisJsonsProcess(RedisJsonsUser):
     def __init__(self, user_id: int | str, handle: str) -> None:
         super().__init__(user_id, handle)
 
@@ -68,7 +68,7 @@ class RedisJsonsProcess(RedisJsons):
         exp: время истечения *в минутах
         """
 
-        redis_data: dict | None = __redis_save_jwt_token__.get_cached()  
+        redis_data: dict | None = __redis_save_jwt_code_token__.get_cached()  
         if not redis_data:
             redis_data = {}
 
@@ -80,5 +80,5 @@ class RedisJsonsProcess(RedisJsons):
         data["exp"] = expiry_time.isoformat()
         redis_data[self.name_key] = data
 
-        __redis_save_jwt_token__.cached(data=redis_data, ex=None)
+        __redis_save_jwt_code_token__.cached(data=redis_data, ex=None)
         return redis_data 

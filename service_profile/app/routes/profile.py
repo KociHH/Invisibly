@@ -29,7 +29,7 @@ async def user_profile_data(
     token: str = Depends(oauth2_scheme)
     ):
     user_id = user_process.user_id
-    obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered", token)
+    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, "UserRegistered")
 
     name = obj.get("name", "")
     surname = obj.get("surname", "")
@@ -50,7 +50,7 @@ async def user_edit_profile_data(
     token: str = Depends(oauth2_scheme)
     ):
     user_id = user_info.user_id
-    obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered", token)
+    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, "UserRegistered")
 
     login = obj.get("login") or "N/A"
     if login and "@" in login:
@@ -82,7 +82,7 @@ async def processing_edit_profile(
     }
     handle = "UserRegistered"
     rjp = RedisJsonsProcess(user_id, handle)
-    obj: dict = await _http_client.get_or_cache_user_info(user_id, handle, token)
+    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, handle)
 
     now_data = {
         "name": obj.get("name"),

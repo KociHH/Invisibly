@@ -10,7 +10,7 @@ class FriendFullInfo(BaseModel):
     friend_id: int | str
 
 class FriendUpdate(BaseModel):
-    user_id: str | int | None = None
+    user_id: str | int
     friend_id: str | int | None = None
     addition_number: str | int | None = None
 

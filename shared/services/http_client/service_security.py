@@ -5,10 +5,22 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceSecurityHttpClient(PublicHttpClient):
-    def __init__(self, security_url: str):
-        super().__init__(security_url)
+    def __init__(
+        self, 
+        security_url: str,
+        iss: str,
+        aud: str
+        ):
+        super().__init__(security_url, iss, aud)
 
-    async def create_UJWT_post(self, data: dict) -> dict:
+    async def create_UJWT_post(
+        self, 
+        data: dict, 
+        interservice_token: str | None = None
+        ) -> dict:
+        """scopes: write"""
         path = "/create_UJWT"
         payload = data
-        return await self._perform_request("POST", path, payload, None)
+        if not interservice_token:
+            interservice_token = self.template_create_add_interservice_token(["write"])
+        return await self._perform_request("POST", path, payload, interservice_token)

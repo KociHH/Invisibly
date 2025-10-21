@@ -8,7 +8,7 @@ import hashlib
 import logging
 from shared.crud.sql.user import UserCRUD, EncryptEmail
 from shared.config.variables import curretly_msk
-from shared.crud.redis.create import RedisJsons
+from shared.crud.redis.create import RedisJsonsUser
 
 logger = logging.getLogger(__name__)
 
@@ -21,17 +21,10 @@ class UserProcess(UserCRUD):
         self, 
         w_pswd: bool, 
         w_email_hash: bool, 
-        user_id: int | str | None = None
         ) -> dict[str, Any] | None:
-        """
-        default: UserRegistered.user_id == self.user_id 
-        """
-        try:
-            if not user_id:
-                user_id = self.user_id
-                
+        try:    
             user_obj = await self.user_registered.get_one(
-                UserRegistered.user_id == user_id)
+                UserRegistered.user_id == self.user_id)
 
             info = {
                 "user_id": user_obj.user_id,
@@ -53,17 +46,16 @@ class UserProcess(UserCRUD):
             logger.error(f'Ошибка в get_user_info:\n{e}')
             return None
 
-    async def update_user(self, update_data: dict) -> bool:
-        """
-        UserRegistered.user_id == self.user_id
-        """
+    async def update_user(
+        self, 
+        update_data: dict,
+        ) -> bool:
         if not update_data: # {}
+            logger.error(f"Пустой update_data: {update_data}")
             return False
-
-        user_dao = BaseDAO(UserRegistered, self.db_session)
         
         try:
-            success = await user_dao.update(
+            success = await self.user_registered.update(
                 UserRegistered.user_id == self.user_id, 
                 **update_data
                 )
@@ -72,14 +64,12 @@ class UserProcess(UserCRUD):
             logger.error(f"Ошибка при обновлении пользователя {self.user_id}: {e}")
             return False
 
+    @staticmethod
     async def find_user_by_param(
-        self, 
+        db_session: AsyncSession,
         param_name: str, 
-        param_value: str | Any
+        param_value: str | Any,
         ) -> dict:
-        """
-        column_to_search == param_value
-        """
         attr = {
             "user_id": UserRegistered.user_id, 
             "login": UserRegistered.login, 
@@ -97,7 +87,7 @@ class UserProcess(UserCRUD):
         
         column_to_search = attr[param_name]
 
-        user_dao = BaseDAO(UserRegistered, self.db_session)
+        user_dao = BaseDAO(UserRegistered, db_session)
 
         user_info = await user_dao.get_one(column_to_search == param_value)
         if user_info:
@@ -159,7 +149,7 @@ class GetUserInfo:
         return {"device_type": device_type, "user_agent": user_agent}
 
 
-class RedisJsonsProcess(RedisJsons):
+class RedisJsonsProcess(RedisJsonsUser):
     def __init__(self, user_id: int | str, handle: str) -> None:
         super().__init__(user_id, handle)
 

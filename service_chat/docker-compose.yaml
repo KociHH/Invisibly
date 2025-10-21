@@ -3,8 +3,13 @@ services:
     build:
       context: ..
       dockerfile: service_chat/Dockerfile
-    
     ports: 
       - "${SERVICE_CHAT_PORT}:${SERVICE_CHAT_PORT}"
     env_file:
       - "../.env"
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    external: true

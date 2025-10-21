@@ -8,22 +8,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-UNAUTHORIZED = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Unable to verify credentials",
-    headers={"Authenticate": "Bearer"},
-    )
-
-def verify_token(token: str) -> int:
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
-        user_id: int = payload.get("user_id")
-        if user_id is None:
-            raise UNAUTHORIZED
-        return user_id
-
-    except exceptions.JWTError:
-        raise UNAUTHORIZED
 
 def create_token(
         data: dict, 

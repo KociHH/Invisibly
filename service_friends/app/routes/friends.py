@@ -45,7 +45,6 @@ async def processing_friend_add(
 
     login = "@" + fa.login
 
-    # friend_info = await rpc_client.find_user_by_param(user_info.user_id, "login", param_value=login)
     friend_info = await _http_client.find_user_by_param("login", param_value=login)
     if friend_info and isinstance(friend_info, dict):
         friend_id = friend_info.get("user_id")

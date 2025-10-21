@@ -1,7 +1,7 @@
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from shared.crud.redis.create import RedisJsons
+from shared.crud.redis.create import RedisJsonsUser
 from shared.data.redis.instance import __redis_save_chats__
 from app.db.sql.models.personal_user import UserChat, Message, ChatParticipant
 from shared.services.tools.other import full_name_constructor
@@ -16,7 +16,7 @@ class UserProcess(UserCRUD):
         super().__init__(user_id=user_id, db_session=db_session)
 
 
-class ChatsProcess(RedisJsons):
+class ChatsProcess(RedisJsonsUser):
     def __init__(
         self, 
         user_id: int | str, 

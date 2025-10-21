@@ -3,6 +3,8 @@ import httpx
 from typing import Any, Callable, Coroutine
 import logging
 
+from shared.crud.redis.usage import create_add_interservice_token
+
 logger = logging.getLogger(__name__)
 
 def error_handler_wrapper(func: Coroutine) -> Coroutine:
@@ -22,8 +24,26 @@ def error_handler_wrapper(func: Coroutine) -> Coroutine:
 
 
 class PublicHttpClient:
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, iss: str, aud: str) -> None:
         self.base_url = base_url
+        self.iss = iss
+        self.aud = aud
+
+    def template_create_add_interservice_token(self, scopes: list[str]):
+        data = {
+            "iss": self.iss,
+            "aud": self.aud,
+            "scopes": scopes
+        }
+        try:
+            token = create_add_interservice_token(data)
+            if not token:
+                raise HTTPException(status_code=403, detail="This token is already in use")
+            return token
+        
+        except Exception as e:
+            logger.error(f"Ошибка в функции create_add_interservice_token: {e}")
+            raise HTTPException(status_code=500, detail="Server error")
 
     @error_handler_wrapper
     async def _perform_request(
@@ -31,17 +51,17 @@ class PublicHttpClient:
         method: str, 
         path: str, 
         payload: dict | None,
-        token: str | None
+        interservice_token: str,
+        user_token: str | None = None
         ) -> dict:
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        elif method in ['POST', 'PATCH'] and path != "/create_UJWT":
-            logger.error(f"Не был передан аргумент token: {token}")
-            raise PermissionError("Access token is required")
+        
+        headers["Authorization"] = f"Bearer {interservice_token}"
+        if user_token:
+            headers["X-User-Token"] = f"Bearer {user_token}"
 
         timeout = httpx.Timeout(connect=2.0, read=5.0, write=5.0, pool=2.0)
         limits = httpx.Limits(max_keepalive_connections=50, max_connections=100)
@@ -58,5 +78,6 @@ class PublicHttpClient:
             response.raise_for_status()
             return response.json()
 
-async def get_http_client(request: Request) -> PublicHttpClient:
+async def get_http_client_state(request: Request) -> PublicHttpClient:
     return request.app.state.http_client
+
