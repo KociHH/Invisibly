@@ -7,7 +7,7 @@ pass
 ## Клиентские Api
 pass
 
-> С полной документацией всех api можно ознакомиться [тут](https://github.com/KociHH/meetbot/blob/main/README.api.md)
+> С полной документацией всех api можно ознакомиться [тут](https://github.com/KociHH/Invisibly/blob/main/README.api.md)
 
 ## Что использовалось в проекте
 
