@@ -31,16 +31,16 @@ async def user_profile_data(
     user_id = user_process.user_id
     obj: dict = await _http_client.free.get_or_cache_user_info(user_id, "UserRegistered")
 
-    name = obj.get("name", "")
-    surname = obj.get("surname", "")
+    name = obj.get("name") or ""
+    surname = obj.get("surname") or ""
 
     full_name = full_name_constructor(name, surname, str(user_process.user_id))
 
     return {
         "user_id": user_id,
         "full_name": full_name,
-        "login": obj.get("login") or "N/A",
-        "bio": obj.get("bio") or "N/A"
+        "login": obj.get("login") or "",
+        "bio": obj.get("bio") or ""
     }
 
 # edit profile
@@ -52,15 +52,15 @@ async def user_edit_profile_data(
     user_id = user_info.user_id
     obj: dict = await _http_client.free.get_or_cache_user_info(user_id, "UserRegistered")
 
-    login = obj.get("login") or "N/A"
+    login = obj.get("login")  or ""
     if login and "@" in login:
         login = login.lstrip("@")
 
     return {
-        "name": obj.get("name") or "N/A",
-        "surname": obj.get("surname") or "N/A",
+        "name": obj.get("name") or "",
+        "surname": obj.get("surname") or "",
         "login": login,
-        "bio": obj.get("bio")
+        "bio": obj.get("bio") or ""
     }
 
 @router.post("/edit_profile", response_model=SuccessMessageAnswer)
@@ -85,10 +85,10 @@ async def processing_edit_profile(
     obj: dict = await _http_client.free.get_or_cache_user_info(user_id, handle)
 
     now_data = {
-        "name": obj.get("name"),
-        "surname": obj.get("surname"),
-        "login": obj.get("login"),
-        "bio": obj.get("bio")
+        "name": obj.get("name") or "",
+        "surname": obj.get("surname") or "",
+        "login": obj.get("login") or "",
+        "bio": obj.get("bio") or ""
     }
 
     update_data = {}

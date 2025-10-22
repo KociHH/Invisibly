@@ -12,15 +12,14 @@ from shared.config.variables import curretly_msk
 import logging
 from shared.data.redis.instance import __redis_save_jwt_code_token__
 from shared.services.tools.variables import names_services
-from shared.crud.redis.usage import verify_interservice_token
 
 
 logger = logging.getLogger(__name__)
 
 ACCESS_TOKEN_LIFETIME_MINUTES = int(l("ACCESS_TOKEN_LIFETIME_MINUTES"))
 REFRESH_TOKEN_LIFETIME_DAYS = int(l("REFRESH_TOKEN_LIFETIME_DAYS"))
-INTERSERVICE_TOKEN_LIFETIME_MINUTES = int(l("HTTP_TOKEN_LIFETIME_MINUTES"))
-ALGORITHM = [l("ALGORITHM")]
+INTERSERVICE_TOKEN_LIFETIME_MINUTES = int(l("INTERSERVICE_TOKEN_LIFETIME_MINUTES"))
+ALGORITHM = l("ALGORITHM")
 SECRET_KEY = l("SECRET_KEY")
 SECRET_KEY_SIZE = int(l("SECRET_KEY_SIZE"))
 TOKEN_LIFETIME_DAYS = int(l("TOKEN_LIFETIME_DAYS"))
@@ -70,6 +69,8 @@ def create_disposable_interservice_token(data: dict):
         "aud": "SERVICE_B",
         "scopes": ["read", "write"]
     }
+    
+    return: encoded_jwt, jti
     """
     need_scopes = ["read", "write", "delete"]
     
@@ -137,9 +138,10 @@ def control_rules_interservice_token(
             logger.error("Отсутствует токен для проверки")
             raise UNAUTHORIZED
         try:
-            payload = verify_interservice_token(token)
+            manager = InterserviceTokenManager()
+            payload = manager.verify_token(token)
         except exceptions.ExpiredSignatureError:
-            logger.info(f"Межсервисный токен истек")
+            logger.warning(f"Межсервисный токен истек")
             raise UNAUTHORIZED
         except Exception as e:
             logger.error(f"Ошибка проверки межсервисного токена: {e}")
@@ -168,3 +170,43 @@ def get_interservice_token_not_verify_exp(token: str) -> dict:
     except Exception as e:
         logger.error(f"Ошибка проверки межсервисного токена: {e}")
         raise UNAUTHORIZED
+
+
+class InterserviceTokenManager:
+    def __init__(self, redis_token_class: type):
+        """
+        redis_token_class: Класс для работы с межсервисными токенами в Redis, требуемый класс: `RedisJsonsServerToken`
+        """
+        self._redis_token_class = redis_token_class
+    
+    def verify_token(self, token: str) -> dict[str, Any]:
+        """
+        Проверка межсервисного токена: JWT + Redis
+        """
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM, options={"verify_aud": False, "verify_iss": False})
+        except exceptions.ExpiredSignatureError:
+            logger.warning("Межсервисный токен истек")
+            raise UNAUTHORIZED
+        except exceptions.JWTError as e:
+            logger.error(f"Ошибка с jwt: {e}")
+            raise UNAUTHORIZED
+            
+        token_type: str = payload.get("type")
+        if token_type != "interservice":
+            logger.error(f"token_type != interservice: {token_type}")
+            raise UNAUTHORIZED
+        
+        jti = payload.get("jti")
+        if not jti:
+            logger.error("Не указан параметр jti")
+            raise UNAUTHORIZED
+        
+        server_token = self._redis_token_class(jti)
+        check_token = server_token.get_interservice_token()
+            
+        if check_token:
+            return payload
+        else:
+            logger.error(f"Данные токена {jti} не найдены: {check_token}")
+            raise UNAUTHORIZED

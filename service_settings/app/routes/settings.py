@@ -24,10 +24,10 @@ async def user_settings_data(
     obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered")
 
     return {
-        "name": obj.get('name') or "N/A",
-        "surname": obj.get('surname') or "N/A",
-        "login": obj.get('login') or "N/A",
-        "bio": obj.get('bio') or "N/A",
+        "name": obj.get('name') or "",
+        "surname": obj.get('surname') or "",
+        "login": obj.get('login') or "",
+        "bio": obj.get('bio') or "",
     }
 
 @router.post("/logout")

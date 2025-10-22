@@ -5,7 +5,6 @@ from shared.services.jwt.token import verify_token_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from shared.crud.sql.user import UserCRUD
 from shared.services.http_client.service_free import ServiceFreeHttpClient
-from shared.services.http_client.variables import get_http_client_state
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 

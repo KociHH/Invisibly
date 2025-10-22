@@ -29,7 +29,7 @@ class PublicHttpClient:
         self.iss = iss
         self.aud = aud
 
-    def template_create_add_interservice_token(self, scopes: list[str]):
+    def template_create_add_interservice_token(self, scopes: list[str]) -> str:
         data = {
             "iss": self.iss,
             "aud": self.aud,

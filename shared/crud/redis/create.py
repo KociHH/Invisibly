@@ -2,13 +2,16 @@ from datetime import timedelta
 from email.policy import HTTP
 from typing import Any
 from redis import Redis
-from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_code_token__, dif_key
+from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_code_token__, __redis_dif_key__
 from shared.config.variables import curretly_msk
 import logging
 from fastapi import HTTPException
-from kos_Htools.redis_core import RedisBase, RedisDifKey
+from kos_Htools.redis_core import RedisBase
+from shared.services.tools.other import l
 
 logger = logging.getLogger(__name__)
+
+INTERSERVICE_TOKEN_LIFETIME_MINUTES = int(l("INTERSERVICE_TOKEN_LIFETIME_MINUTES"))
 
 class RedisJsonsUser:
     def __init__(self, user_id: int | str, handle: str) -> None:
@@ -22,7 +25,7 @@ class RedisJsonsUser:
     def replace_items_data(self, items: dict[str, Any]) -> dict:
         """
         Заменяет данные ключей где встречается self.user_id на новые в redis
-        Использует __redis_save_sql_call__
+        Использует `__redis_save_sql_call__`
         """
 
         redis_data: dict = __redis_save_sql_call__.get_cached() or {}
@@ -44,7 +47,7 @@ class RedisJsonsUser:
 
     def save_sql_call(self, data: dict, exp: int = 300) -> dict:
         """
-        Можно сохранять либо обновлять в хранилище __redis_save_sql_call__
+        Можно сохранять либо обновлять в хранилище `__redis_save_sql_call__`
 
         data: дата для сохранения
         exp: время истечения *в секундах
@@ -71,7 +74,7 @@ class RedisJsonsUser:
         key_data: str,
         ) -> dict:
         """
-        Использует __redis_save_sql_call__
+        Использует `__redis_save_sql_call__`
 
         items: [id, name, ...]
         key_data: user_id-edit_profile и тд
@@ -108,7 +111,7 @@ class RedisJsonsServerToken:
     ) -> None:
         self.jti = jti
         self.payload: dict | None = None
-        self.__redis_save_jwt_interservice_token__ = RedisBase(self.jti)
+        self.__redis_save_jwt_interservice_token__ = RedisBase(self.jti, {}, redis_client=__redis_dif_key__.redis)
         
     def save_interservice_token(
         self, 
@@ -116,24 +119,22 @@ class RedisJsonsServerToken:
         ) -> dict:
         """
         Сохраняет как per-to-key и проверяет на существование токена
-
-        token: дата для сохранения
         """
         redis_data: dict = self.__redis_save_jwt_interservice_token__.get_cached() or {}
         if not redis_data:
             result_data = {
                 "token": token,
             }
-            self.__redis_save_jwt_interservice_token__.cached(data=result_data)
+            self.__redis_save_jwt_interservice_token__.cached(result_data, ex=INTERSERVICE_TOKEN_LIFETIME_MINUTES * 60)
             return result_data
         return {}
     
-    def get_interservice_token(self) -> dict:
+    def get_interservice_token(self) -> dict | None:
         """
         Получает конкретный ключ по своим атрибутам
         """
         redis_data: dict = self.__redis_save_jwt_interservice_token__.get_cached() or {}
-        return redis_data
+        return redis_data if redis_data else None
     
     def delete_interservice_token(self) -> bool:
         """
@@ -155,8 +156,9 @@ class RedisJsonsServerToken:
         Удаляет и возвращает сам ключ, в других ситуациях False 
         """
         try:
-            dif_key.redis = _redis_client
-            result = dif_key.__redis_consume_key__(self.jti)
+            if _redis_client:
+                __redis_dif_key__.redis = _redis_client
+            result = __redis_dif_key__.__redis_consume_key__(self.jti)
             return result
         except Exception as e:
             logger.error(f"Ошибка при потреблении межсервисного токена {self.jti}: {e}")

@@ -1,5 +1,5 @@
 from typing import Any
-from shared.services.http_client.variables import PublicHttpClient
+from shared.services.http_client.gateway import PublicHttpClient
 
 
 class ServiceFriendsHttpClient(PublicHttpClient):
@@ -16,6 +16,7 @@ class ServiceFriendsHttpClient(PublicHttpClient):
         param_name: str, 
         param_value: Any, 
         interservice_token: str | None = None,
+        user_token: str | None = None
         ) -> dict:
         """scopes: read"""
         path = "/find_user_by_param"
@@ -25,13 +26,14 @@ class ServiceFriendsHttpClient(PublicHttpClient):
             }
         if not interservice_token:
             interservice_token = self.template_create_add_interservice_token(["read"])
-        return await self._perform_request("GET", path, payload, interservice_token)
+        return await self._perform_request("GET", path, payload, interservice_token, user_token)
 
     async def friends_requests_info(
         self, 
         user_id: str | int, 
         fields: list[str] | None,
-        interservice_token: str | None = None
+        interservice_token: str | None = None,
+        user_token: str | None = None
         ):
         """scopes: read"""
         path = "/friends_requests_info"
@@ -41,14 +43,15 @@ class ServiceFriendsHttpClient(PublicHttpClient):
             }
         if not interservice_token:
             interservice_token = self.template_create_add_interservice_token(["read"])
-        return await self._perform_request("GET", path, payload, interservice_token)
+        return await self._perform_request("GET", path, payload, interservice_token, user_token)
 
     async def get_or_cache_friends(
         self, 
         user_id: str | int,
         handle: str, 
         sort_reverse: bool,
-        interservice_token: str | None = None
+        interservice_token: str | None = None,
+        user_token: str | None = None
         ):
         """scopes: write, read"""
         path = "/get_or_cache_friends"
@@ -59,4 +62,4 @@ class ServiceFriendsHttpClient(PublicHttpClient):
             }
         if not interservice_token:
             interservice_token = self.template_create_add_interservice_token(["write", "read"])
-        return await self._perform_request("GET", path, payload, interservice_token)
+        return await self._perform_request("GET", path, payload, interservice_token, user_token)

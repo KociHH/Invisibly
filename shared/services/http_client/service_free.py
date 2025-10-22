@@ -1,5 +1,5 @@
 from typing import Any
-from shared.services.http_client.variables import PublicHttpClient
+from shared.services.http_client.gateway import PublicHttpClient
 
 
 class ServiceFreeHttpClient(PublicHttpClient):
@@ -16,6 +16,7 @@ class ServiceFreeHttpClient(PublicHttpClient):
         param_name: str, 
         param_value: Any,
         interservice_token: str | None = None,
+        user_token: str | None = None
         ) -> dict:
         """scopes: read"""
         path = "/find_user_by_param"
@@ -25,7 +26,7 @@ class ServiceFreeHttpClient(PublicHttpClient):
         }
         if not interservice_token:
             interservice_token = self.template_create_add_interservice_token(["read"])
-        return await self._perform_request("GET", path, payload, interservice_token)
+        return await self._perform_request("GET", path, payload, interservice_token, user_token)
 
     async def get_user_info(
         self, 
@@ -33,6 +34,7 @@ class ServiceFreeHttpClient(PublicHttpClient):
         w_pswd: bool = False, 
         w_email_hash: bool = False,
         interservice_token: str | None = None,
+        user_token: str | None = None
     ) -> dict:
         """scopes: read"""
         path = "/get_user_info"
@@ -43,19 +45,20 @@ class ServiceFreeHttpClient(PublicHttpClient):
         }
         if not interservice_token:
             interservice_token = self.template_create_add_interservice_token(["read"])
-        return await self._perform_request("GET", path, payload, interservice_token)
+        return await self._perform_request("GET", path, payload, interservice_token, user_token)
 
     async def update_user(
         self,
         data: dict,
-        interservice_token: str | None = None
+        interservice_token: str | None = None,
+        user_token: str | None = None
         ) -> Any | bool: 
         """scopes: write"""
         path = "/update_user"
         payload = data
         if not interservice_token:
             interservice_token = self.template_create_add_interservice_token(["write"])
-        return await self._perform_request("PATCH", path, payload, interservice_token)
+        return await self._perform_request("PATCH", path, payload, interservice_token, user_token)
 
     async def get_or_cache_user_info(
         self,
@@ -63,7 +66,8 @@ class ServiceFreeHttpClient(PublicHttpClient):
         handle: str,
         return_items: list | None = None,
         save_sql_redis: bool = True,
-        interservice_token: str | None = None
+        interservice_token: str | None = None,
+        user_token: str | None = None
     ):
         """scopes: read, write"""
         path = "/get_or_cache_user_info"
@@ -74,5 +78,5 @@ class ServiceFreeHttpClient(PublicHttpClient):
             "save_sql_redis": save_sql_redis
         }
         if not interservice_token:
-            interservice_token = self.template_create_add_interservice_token(["write"])
-        return await self._perform_request("PATCH", path, payload, interservice_token)
+            interservice_token = self.template_create_add_interservice_token(["read", "write"])
+        return await self._perform_request("PATCH", path, payload, interservice_token, user_token)
