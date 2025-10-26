@@ -22,7 +22,7 @@ async def change_email_post(
     change: ChangeEmail,
     user_info: UserProcess = Depends(require_existing_user_dep)
 ):
-    rjp = RedisJsonsProcess(user_info.user_id, "change_email")
+    rjp = RedisJsonsProcess(user_info.user_id)
 
     ee = EncryptEmailProcess(change.new_email)
     email_hash = ee.hash_email()
@@ -40,14 +40,14 @@ async def change_email_post(
         logger.error(f"По неизвестной причине email пользователя {user_info.user_id} не был обновлен")
         raise HTTPException(status_code=500, detail="Server error")
     
-    data_result = rjp.replace_items_data(items={
+    data_result = rjp.jwt_confirm_token_obj.replace_items_data(items={
         "email": change.new_email,
         "email_hash": email_hash
     })
     if not data_result:
         logger.warning(f"Не удалось обновить кэш UserRegistered для пользователя {user_info.user_id}")
     
-    delete_token = rjp.delete_token()
+    delete_token = rjp.jwt_confirm_token_obj.delete_token()
     if not delete_token:
         logger.error(f"Функция {user_info.user_id} delete_token завершилась неудачно: {delete_token}")
         raise HTTPException(status_code=500, detail="Server error")

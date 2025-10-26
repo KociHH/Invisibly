@@ -1,8 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse
 import logging
 from app.crud.user import UserProcess
-from shared.config.variables import path_html
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import Depends
@@ -20,7 +18,7 @@ async def user_chats_data(
     user_info: UserProcess = Depends(require_existing_user_dep),
     db_session: AsyncSession = Depends(get_db_session)
 ):
-    cp = ChatsProcess(user_info.user_id, "chats")
+    cp = ChatsProcess(user_info.user_id)
 
     chats_data = await cp.get_or_cache_chats(db_session)
 

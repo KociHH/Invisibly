@@ -1,8 +1,9 @@
-from kos_Htools.sql.sql_alchemy.dao import BaseDAO
+from fastapi import HTTPException
+from kos_Htools.redis_core import RedisBase
+from kos_Htools.sql.sql_alchemy import BaseDAO
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from shared.crud.redis.create import RedisJsonsUser
-from shared.data.redis.instance import __redis_save_chats__
+from service_chat.app.db.redis.keys import RedisUserKeys
 from app.db.sql.models.personal_user import UserChat, Message, ChatParticipant
 from shared.services.tools.other import full_name_constructor
 import logging
@@ -16,32 +17,54 @@ class UserProcess(UserCRUD):
         super().__init__(user_id=user_id, db_session=db_session)
 
 
-class ChatsProcess(RedisJsonsUser):
+class ChatsProcess(RedisUserKeys):
     def __init__(
         self, 
         user_id: int | str, 
-        handle: str
+        db_session: AsyncSession
         ) -> None:
-        super().__init__(user_id, handle)
+        super().__init__(user_id)
+        self.db_session = db_session
+        
+        self.chat_parti_dao = BaseDAO(ChatParticipant, self.db_session)
+        self.user_chat_dao = BaseDAO(UserChat, self.db_session)
+        self.message_dao = BaseDAO(Message, self.db_session)
 
-    async def get_or_cache_chats(
-        self, 
-        db_session: AsyncSession,
-        ) -> dict:
-        data: dict | None = __redis_save_chats__.get_cached()
+    async def get_chats_participants_user(self) -> dict:
+        """
+        return *example: `{chat_id: [uid1, uid2], ...} or {}`
+        """
+        try:
+            user_chats = await self.chat_parti_dao.get_all_column_values(
+                ChatParticipant.chat_id,
+                ChatParticipant.user_id == self.user_id
+            )
+        
+            result_chat_info = {}
+            if user_chats:
+                for chat_id in user_chats:
+                    user_in_chat: list = await self.chat_parti_dao.get_one_ordered_or_none(
+                        ChatParticipant.user_id,
+                        ChatParticipant.chat_id == chat_id
+                    )
+                
+                    user_in_chat_clear = [uid for uid in user_in_chat if uid != self.user_id]
+                    if user_in_chat_clear:
+                        for uid in user_in_chat_clear:
+                            result_chat_info[chat_id] = [self.user_id, uid]
 
-        if not data:
-            data = {}
+            return result_chat_info
+        except Exception as e:
+            logger.error(f"Ошибка в функции get_chats_participants_user: {e}")
+            raise HTTPException(status_code=500, detail="Server error")
 
-        chat_data = data.get(self.name_key, {})
+    async def get_or_cache_chats(self) -> dict:
+        chat_data: dict = self.chat_obj.checkpoint_key.get_cached() or {}
+
         if not chat_data:
-
-            chat_dao = BaseDAO(UserChat, db_session)
-            message_dao = BaseDAO(Message, db_session)
-
-            chats = await chat_dao.get_all_column_values(
+            chats = await self.chat_parti_dao.get_all_column_values(
                 (UserChat.user1_id, UserChat.user2_id, UserChat.id, UserChat.created_at),
-                or_(UserChat.user1_id == self.user_id, UserChat.user2_id == self.user_id)
+                and_(UserChat.user1_id == self.user_id, UserChat.user2_id == self.user_id)
             )
 
             if chats:
@@ -52,7 +75,7 @@ class ChatsProcess(RedisJsonsUser):
                     user2_id = chat_pack[1]
                     chat_id = chat_pack[2]
 
-                    messages = await message_dao.get_all_column_values(
+                    messages = await self.message_dao.get_all_column_values(
                         Message.content,
                         and_(Message.chat_id == chat_id, Message.id),
                         order_by=(desc(Message.id),),
@@ -69,20 +92,16 @@ class ChatsProcess(RedisJsonsUser):
                     
                     chat_user_info = await _http_client.find_user_by_param("user_id", user_content)
 
-                    full_name = full_name_constructor(chat_user_info.name, chat_user_info.surname)
-
-                    if self.name_key not in data:
-                        data[self.name_key] = {}
+                    full_name = full_name_constructor(chat_user_info.get("name"), chat_user_info.get("surname"))
                         
-                    data[self.name_key][id_chat] = {
+                    chat_data[id_chat] = {
                         "full_name": full_name,
                         "last_message": last_message,
                         "id_chat": id_chat
                     }
 
-                __redis_save_chats__.cached(data)
-            return data.get(self.name_key, {})
-            
+                self.chat_obj.checkpoint_key.cached(chat_data)
+            return chat_data
         else:
             return chat_data
 
@@ -98,16 +117,7 @@ class MessageProcess:
         
     async def message_history_chat_user(self, db_session: AsyncSession) -> dict:
         """
-        Return *example: {
-            123: {
-                "content": str,
-                "send_at": datetime,
-            },
-            345: {
-                "content": str,
-                "send_at": datetime,
-            }
-        } 
+        return *example: `{ 123: {"content": str, "send_at": datetime}, ...}` 
         """
         
         message_dao = BaseDAO(Message, db_session)
@@ -117,10 +127,10 @@ class MessageProcess:
             Message.chat_id == self.chat_id
         )
         
+        return_data = {}
         if messages_chat:
             messages_chat.sort(lambda m: m[1], reverse=True)
         
-            return_data = {}
             for message_pack in messages_chat:
                 sender_id = message_pack[0]
                 send_at = message_pack[1]
@@ -130,7 +140,7 @@ class MessageProcess:
                     "content": content,
                     "send_at": send_at,
                 }
-            
-            return return_data
-            
-        return {}
+        return return_data
+    
+    async def get_or_cache_messages(self):
+        pass

@@ -48,7 +48,6 @@ class ServiceFriendsHttpClient(PublicHttpClient):
     async def get_or_cache_friends(
         self, 
         user_id: str | int,
-        handle: str, 
         sort_reverse: bool,
         interservice_token: str | None = None,
         user_token: str | None = None
@@ -57,7 +56,6 @@ class ServiceFriendsHttpClient(PublicHttpClient):
         path = "/get_or_cache_friends"
         payload = {
             "user_id": user_id, 
-            "handle": handle, 
             "sort_reverse": sort_reverse
             }
         if not interservice_token:

@@ -10,7 +10,6 @@ from shared.config.variables import path_html
 from fastapi import Depends
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from jose import jwt
-from shared.data.redis.instance import __redis_save_sql_call__
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.db.sql.settings import get_db_session

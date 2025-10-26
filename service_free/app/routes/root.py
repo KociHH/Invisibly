@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse
 import logging
 from shared.config.variables import path_html, PSWD_context
 from app.crud.user import GetUserInfo

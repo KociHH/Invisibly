@@ -8,7 +8,9 @@ import hashlib
 import logging
 from shared.crud.sql.user import UserCRUD, EncryptEmail
 from shared.config.variables import curretly_msk
-from shared.crud.redis.create import RedisJsonsUser
+from shared.crud.redis.create import RedisJsonsUser 
+from redis import Redis
+from service_free.app.db.redis.keys import redis_client, RedisUserKeys
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +151,12 @@ class GetUserInfo:
         return {"device_type": device_type, "user_agent": user_agent}
 
 
-class RedisJsonsProcess(RedisJsonsUser):
-    def __init__(self, user_id: int | str, handle: str) -> None:
-        super().__init__(user_id, handle)
+class RedisJsonsProcess(RedisUserKeys):
+    def __init__(
+        self, 
+        user_id: int | str, 
+        ) -> None:
+        super().__init__(user_id)
 
     async def get_or_cache_user_info(
         self, 
@@ -160,12 +165,12 @@ class RedisJsonsProcess(RedisJsonsUser):
         save_sql_redis: bool = True,
         ):
         """
-        Берет данные из __redis_save_sql_call__, если нет self.name_key в redis то береться из базы UserRegistered
+        Берет данные из кеша, если нет данных в `redis` то береться делает запрос к `UserRegistered`
         """
         if return_items == None:
             return_items = ["name", "surname", "login", "bio", "email", "email_hash"]
 
-        obj: dict = self.redis_return_data(items=return_items, key_data=self.name_key)
+        obj: dict = self.user_obj.redis_return_data(return_items)
 
         if obj.get("redis") == "empty":
             user_process = UserProcess(self.user_id, db_session)
@@ -185,7 +190,7 @@ class RedisJsonsProcess(RedisJsonsUser):
             }
 
             if save_sql_redis:
-                new_data = self.save_sql_call(new_data)
+                new_data = self.user_obj.save_sql_call(new_data)
                 if not new_data:
                     logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
                     raise HTTPException(status_code=500, detail="Server error")

@@ -1,7 +1,7 @@
 from datetime import timedelta
 import uuid
 from fastapi import HTTPException
-from shared.data.redis.instance import __redis_save_sql_call__
+from shared.data.redis.keys import __redis_save_sql_call__
 import logging
 import smtplib
 from email.message import EmailMessage
@@ -105,13 +105,11 @@ class EmailProcess:
     def send_change_email(
         self,
         user_id_rjp: int | str,
-        handle: str,
         user_id: int | str,
         api_type: str
         ):
         """
         user_id_rjp: аргумент user_id в RedisJsonsProcess
-        handle: аргумент handle в RedisJsonsProcess
         user_id: user_id для сохранения в токен
         api_type: (
                 тип запроса, от него зависит возвращаемые данные;
@@ -138,7 +136,7 @@ class EmailProcess:
         result_send = self.send_code_email("для подтверждения почты.")
         logger.info(result_send)
         
-        rjp = RedisJsonsProcess(user_id_rjp, handle)
+        rjp = RedisJsonsProcess(user_id_rjp)
         if result_send:
             success = result_send.get("success")
             error = result_send.get("error")
@@ -159,7 +157,7 @@ class EmailProcess:
                     token_data, 
                     timedelta(minutes=life_time_token)
                 )
-                redis_data = rjp.save_jwt_token(verification_token, life_time_token)
+                redis_data = rjp.jwt_confirm_token_obj.save_sql_call({verification_token}, life_time_token)
 
                 if not redis_data:
                     logger.error(f'Не получена дата *redis_data при сохранении в redis: {redis_data}')
@@ -170,7 +168,7 @@ class EmailProcess:
                     return_data["message"] = "Verification email sent."
                 
                 if api_type == "confirm_code":
-                    data_token = redis_data.get(rjp.name_key)
+                    data_token = redis_data.get(rjp.jwt_confirm_token_obj.name_key)
                     exp_token = data_token.get("exp")
 
                     exp_repeated_code = curretly_msk() + timedelta(minutes=life_time_repeated_code)

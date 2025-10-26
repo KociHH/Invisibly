@@ -1,6 +1,5 @@
 from datetime import timedelta
 from fastapi import APIRouter, HTTPException, Depends, status
-from fastapi.responses import HTMLResponse
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy import BaseDAO
@@ -8,7 +7,7 @@ from app.db.sql.tables import UserRegistered
 from app.db.sql.settings import get_db_session
 from app.services.http_client import _http_client
 from app.crud.user import EncryptEmailProcess
-from shared.config.variables import curretly_msk, path_html, PSWD_context
+from shared.config.variables import curretly_msk, PSWD_context
 from app.services.jwt import create_token
 from config import REFRESH_TOKEN_LIFETIME_DAYS
 from app.schemas.auth import UserRegister, UserLogin

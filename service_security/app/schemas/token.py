@@ -4,4 +4,5 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str 
 
 class DeleteTokenRedis(BaseModel):
-    handle: str
+    domain: str
+    cache_call: bool = False

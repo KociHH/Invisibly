@@ -137,14 +137,14 @@ async function checkUpdateTokens() {
     }
 }
 
-async function DeleteTokenRedis(handle: string) {
+async function DeleteTokenRedis(domain: string) {
     try {
         const response = await securedApiCall("/api/security/redis/delete_token/user", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({handle})
+            body: JSON.stringify({domain: domain})
         });
         if (response && response.ok) {
             const data = await response.json();

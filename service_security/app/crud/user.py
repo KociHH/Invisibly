@@ -5,8 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy import BaseDAO
 from app.db.sql.tables import UserJWT
 import logging
-from shared.crud.redis.create import RedisJsonsUser
-from shared.data.redis.instance import __redis_save_sql_call__
+from service_security.app.db.redis.keys import RedisUserKeys
 from typing import Any
 from config import REFRESH_TOKEN_LIFETIME_DAYS
 from shared.config.variables import curretly_msk
@@ -70,6 +69,9 @@ class CreateTable:
         return True
 
 
-class RedisJsonsProcess(RedisJsonsUser):
-    def __init__(self, user_id: int | str, handle: str) -> None:
-        super().__init__(user_id, handle)
+class RedisJsonsProcess(RedisUserKeys):
+    def __init__(
+        self, 
+        user_id: int | str
+        ) -> None:
+        super().__init__(user_id)

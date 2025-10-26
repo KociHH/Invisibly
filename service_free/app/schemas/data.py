@@ -21,6 +21,5 @@ class UserUpdate(BaseModel):
 
 class GetOrCacheUserInfo(BaseModel):
     user_id: int | str
-    handle: str
     return_items: list | None = None
     save_sql_redis: bool = True

@@ -7,7 +7,7 @@ from app.crud.user import UserProcess, RedisJsonsProcess
 from shared.config.variables import path_html
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from jose import jwt
-from shared.data.redis.instance import __redis_save_sql_call__
+from shared.data.redis.keys import __redis_save_sql_call__
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO

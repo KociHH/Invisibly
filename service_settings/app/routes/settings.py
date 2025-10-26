@@ -2,8 +2,6 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 import logging
 from app.schemas.account import SettingsExit
-from app.crud.user import RedisJsonsProcess
-from shared.config.variables import path_html
 from app.crud.user import UserProcess
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends

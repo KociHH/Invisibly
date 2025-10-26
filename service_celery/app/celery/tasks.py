@@ -5,8 +5,8 @@ from db.sql.settings import get_db_session
 import logging
 from kos_Htools.sql.sql_alchemy import BaseDAO
 from ...config import TOKEN_LIFETIME_DAYS
-from app.services.user import CreateTable
-from shared.data.redis.instance import __redis_save_sql_call__
+from app.crud.user import CreateTable
+from app.db.redis.keys import RedisUserKeys, redis_client
 from shared.config.variables import curretly_msk
 from app.db.sql.tables import SecretKeyJWT
 
@@ -41,44 +41,51 @@ def check_jwt_token_date():
                     logger.info('Создался новый SECRET_KEY при инициализации.')
                 else:
                     logger.error(f'Ошибка в функции create_SKJ: не удалось создать SECRET_KEY при инициализации.')
-
+    
     asyncio.run(_run_task())
+    return
         
 @celery_app.task
-def cleaning_expiring_json():
+def cleaning_expiring_keys_cache():
     try:
-        redis_data: dict | None = __redis_save_sql_call__.get_cached() or {}
-        if not redis_data:
-            return
+        keys = redis_client.keys()
+        if keys:
+            keys_cache = [k for k in keys if "cache" in k]
+            
+            if keys_cache:
+                for key_cache_name in keys_cache:
+                    key_cache_params = key_cache_name.split(":")
+                    key_obj = RedisUserKeys(key_cache_params[0]).constructor(key_cache_params[1], True)
+                    
+                    key_data: dict = key_obj.checkpoint_key.get_cached() or {}
+                    if not key_data:
+                        return
 
-        now = curretly_msk()
-        keys_to_remove: list[str] = []
+                    now = curretly_msk()
+                    keys_to_delete = False
 
-        for key, value in list(redis_data.items()):
-            if not isinstance(value, dict) or 'exp' not in value:
-                logger.warning(f"Некорректная структура данных для ключа {key}")
-                continue
+                    for value in list(key_data.values()):
+                        if not isinstance(value, dict) or 'exp' not in value:
+                            logger.warning(f"Некорректная структура данных для ключа {key_obj.name_key}")
+                            continue
 
-            exp = value['exp']
-            try:
-                if isinstance(exp, (int, float)):
-                    expired = exp <= int(now.timestamp())
-                else:
-                    expired = exp <= now
-            except Exception as e:
-                logger.warning(f"Не удалось сравнить exp для {key}: {e}")
-                continue
+                        exp = value['exp']
+                        try:
+                            if isinstance(exp, (int, float)):
+                                expired = exp <= int(now.timestamp())
+                            else:
+                                expired = exp <= now
+                        except Exception as e:
+                            logger.warning(f"Не удалось сравнить exp для {key_obj.name_key}: {e}")
+                            continue
 
-            if expired:
-                keys_to_remove.append(key)
+                        if expired:
+                            keys_to_delete = True
 
-        if keys_to_remove:
-            for k in keys_to_remove:
-                redis_data.pop(k, None)
-            __redis_save_sql_call__.cached(data=redis_data)
-            logger.info(f"Удалено {len(keys_to_remove)} истекших записей")
-
-        return redis_data
+                    if keys_to_delete:
+                        key_obj.checkpoint_key.delete_key()
+                        logger.info(f"Удален ключ {key_obj.name_key} так как он истек")
+        return
 
     except Exception as e:
         logger.exception(f"Ошибка в функции cleaning_expiring_json: {e}")

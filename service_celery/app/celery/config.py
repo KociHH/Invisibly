@@ -17,7 +17,7 @@ beat_schedule = {
         'task': path_tasks + 'check_jwt_token_date',
         'schedule': 86400,
     },
-    'cleaning-expiring-json': {
+    'cleaning-expiring-keys-cache': {
         'task': path_tasks + 'cleaning_expiring_json',
         'shedule': 350,
     }

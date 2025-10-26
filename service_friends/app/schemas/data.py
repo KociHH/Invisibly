@@ -20,5 +20,4 @@ class FriendsRequestsInfo(BaseModel):
 
 class GetOrCacheFriends(BaseModel):
     user_id: str | int
-    handle: str
     sort_reverse: bool

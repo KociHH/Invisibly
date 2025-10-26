@@ -63,7 +63,6 @@ class ServiceFreeHttpClient(PublicHttpClient):
     async def get_or_cache_user_info(
         self,
         user_id: int | str,
-        handle: str,
         return_items: list | None = None,
         save_sql_redis: bool = True,
         interservice_token: str | None = None,
@@ -73,7 +72,6 @@ class ServiceFreeHttpClient(PublicHttpClient):
         path = "/get_or_cache_user_info"
         payload = {
             "user_id": user_id,
-            "handle": handle,
             "return_items": return_items,
             "save_sql_redis": save_sql_redis
         }

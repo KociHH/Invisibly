@@ -2,8 +2,7 @@ from typing import Any
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from shared.crud.redis.create import RedisJsonsUser
-from shared.data.redis.instance import __redis_save_friends__
+from service_friends.app.db.redis.keys import RedisUserKeys
 from app.db.sql.tables import FriendUser, SendFriendRequest
 from shared.services.tools.other import full_name_constructor
 import logging
@@ -110,21 +109,21 @@ class UserProcess(UserCRUD):
         return friends_requests
 
 
-class RedisJsonsProcess(RedisJsonsUser):
-    def __init__(self, user_id: int | str, handle: str) -> None:
-        super().__init__(user_id, handle)
+class RedisJsonsProcess(RedisUserKeys):
+    def __init__(
+        self, 
+        user_id: int | str, 
+        ) -> None:
+        super().__init__(user_id)
 
     async def get_or_cache_friends(
         self, 
         db_session: AsyncSession,
         sort_reverse: bool = False,
         ) -> dict:
-        data: dict | None = __redis_save_friends__.get_cached()
+        data: dict = self.friends_obj.checkpoint_key.get_cached() or {}
 
-        if not data:
-            data = {}
-
-        friends_data = data.get(self.name_key)
+        friends_data = data.get(self.friends_obj.name_key)
         if not friends_data:
 
             friends_dao = BaseDAO(FriendUser, db_session)
@@ -145,15 +144,12 @@ class RedisJsonsProcess(RedisJsonsUser):
                     
                     full_name = full_name_constructor(friends_info.get("name"), friends_info.get("surname"))
 
-                    if self.name_key not in data:
-                        data[self.name_key] = {}
-                    data[self.name_key][friend_id] = {
+                    data[friend_id] = {
                         "full_name": full_name,
                         "addition_number": addition_number
                     }
 
-                __redis_save_friends__.cached(data)
-            return data.get(self.name_key, {})
-            
+                self.friends_obj.checkpoint_key.cached(data)
+            return data
         else:
             return friends_data

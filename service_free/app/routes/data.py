@@ -91,7 +91,7 @@ async def get_or_cache_user_info_patch(
         raise UNAUTHORIZED
     
     if write and read:
-        rjp = RedisJsonsProcess(gocui.user_id, gocui.handle)
+        rjp = RedisJsonsProcess(gocui.user_id)
         
         consume = token_info.consume_interservice_token()
         if consume:

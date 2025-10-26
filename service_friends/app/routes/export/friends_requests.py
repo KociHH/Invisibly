@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
 import logging
 from app.schemas.data import FriendsRequestsInfo
 from shared.crud.redis.create import RedisJsonsServerToken
 from shared.crud.redis.dependencies import get_interservice_token_info
 from shared.services.jwt.token import control_rules_interservice_token
 from sqlalchemy.ext.asyncio import AsyncSession
-from shared.config.variables import path_html, PSWD_context
 from app.crud.user import UserProcess
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from app.db.sql.settings import get_db_session

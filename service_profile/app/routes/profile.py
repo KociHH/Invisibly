@@ -3,19 +3,12 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.params import Query
 from fastapi.responses import HTMLResponse
 import logging
-
-from httpx import get
-from shared.config.variables import path_html
 from fastapi import Depends
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep, oauth2_scheme
 from jose import jwt
-from shared.data.redis.instance import __redis_save_sql_call__
 from app.crud.user import RedisJsonsProcess, UserProcess
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
 from app.schemas.user import UserEditProfileNew, UserProfile
-from sqlalchemy.ext.asyncio import AsyncSession
-from kos_Htools.sql.sql_alchemy.dao import BaseDAO
-from app.db.sql.settings import get_db_session
 from shared.services.tools.other import full_name_constructor
 from app.services.http_client import _http_client
 
@@ -29,7 +22,8 @@ async def user_profile_data(
     token: str = Depends(oauth2_scheme)
     ):
     user_id = user_process.user_id
-    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, "UserRegistered")
+    rjp = RedisJsonsProcess(user_id)
+    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, rjp.user_obj.name_key)
 
     name = obj.get("name") or ""
     surname = obj.get("surname") or ""
@@ -80,9 +74,8 @@ async def processing_edit_profile(
         "login": user.login,
         "bio": user.bio
     }
-    handle = "UserRegistered"
-    rjp = RedisJsonsProcess(user_id, handle)
-    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, handle)
+    rjp = RedisJsonsProcess(user_id)
+    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, rjp.user_obj.name_key)
 
     now_data = {
         "name": obj.get("name") or "",
@@ -114,7 +107,7 @@ async def processing_edit_profile(
             message = "profile updated"
             success = True
 
-            saved_data = rjp.save_sql_call(
+            saved_data = rjp.user_obj.save_sql_call(
                 data=modified_data
             )
             if not saved_data:

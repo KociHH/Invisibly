@@ -10,7 +10,6 @@ from httpx import get
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep, oauth2_scheme
 from fastapi import Depends
 from jose import jwt
-from shared.data.redis.instance import __redis_save_sql_call__, __redis_save_jwt_code_token__
 from app.schemas.account import DeleteAccount
 from app.schemas.change import ChangePassword
 from app.schemas.change import ChangeEmailForm
@@ -20,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from app.services.rabbitmq.client import EmailRpcClient
 from app.crud.user import EncryptEmailProcess, UserProcess, RedisJsonsProcess
-from shared.config.variables import curretly_msk, path_html, PSWD_context
+from shared.config.variables import curretly_msk, PSWD_context
 from app.services.http_client import _http_client
 from app.db.sql.tables import FrozenAccounts
 
@@ -35,7 +34,7 @@ async def change_email_data(
     ):
     user_id = user_info.user_id
 
-    rjp = RedisJsonsProcess(user_id, "change_email")
+    rjp = RedisJsonsProcess(user_id)
 
     del_token = rjp.delete_token()
     if not del_token:
@@ -59,14 +58,11 @@ async def processing_email(
 
     if cef.user_id != current_user_id:
         raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
-    
-    handle_cause = "change_email"
 
-    rjp = RedisJsonsProcess(current_user_id, handle_cause)
+    rjp = RedisJsonsProcess(current_user_id)
     ee = EncryptEmailProcess(cef.email)
 
-    tokens: dict | None = __redis_save_jwt_code_token__.get_cached()
-    token_info = tokens.get(rjp.name_key) if tokens else False
+    token_info: dict = rjp.jwt_confirm_token_obj.checkpoint_key.get_cached() or {}
 
     db_email_hash, _ = await ee.email_verification(current_user_id)
     if db_email_hash:
@@ -83,7 +79,7 @@ async def processing_email(
 
     ep = EmailRpcClient(cef.email)
     try:
-        result = ep.send_change_email(current_user_id, handle_cause, current_user_id, handle_cause)
+        result = ep.send_change_email(current_user_id, "change_email", current_user_id, "change_email")
         return result
             
     except Exception as e:

@@ -46,13 +46,12 @@ class MQ:
                             response_data = {"error": "Not found key rjp_data in request_data"}
 
                         api_type = request_data.get("api_type", '')
-                        handle = request_data.get("handle")
                         user_id_rjp = request_data.get("user_id")
 
-                        if api_type and handle and user_id_rjp:
-                            response_data = self._send_change_email(email, self.user_id, api_type, handle, user_id_rjp)
+                        if api_type and user_id_rjp:
+                            response_data = self._send_change_email(email, self.user_id, api_type, user_id_rjp)
                         else:
-                            keys_not_found = f"(api_type: {api_type}, handle: {handle}, user_id_rjp: {user_id_rjp})"
+                            keys_not_found = f"(api_type: {api_type}, user_id_rjp: {user_id_rjp})"
                             logger.error(f"Не найдены ключи {keys_not_found} в request_data при получении данных ключа: {NotificationsMQ.action_send_change_email_user}")
                             response_data = {"error": f"Not found keys {keys_not_found} in request_data"}
 
@@ -84,12 +83,11 @@ class MQ:
         email: str,
         user_id: int | str,
         api_type: str,
-        handle: str,
         user_id_rjp: int | str
         ):
         ep = EmailProcess(email)
 
-        sended = ep.send_change_email(user_id, api_type, handle, user_id_rjp)
+        sended = ep.send_change_email(user_id, api_type, user_id_rjp)
         return sended
 
 

@@ -7,7 +7,6 @@ from fastapi import Depends
 from shared.config.variables import path_html, curretly_msk
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from app.services.http_client import _http_client
-from shared.data.redis.instance import __redis_save_sql_call__
 from shared.schemas.response_model import SuccessAnswer, SuccessMessageAnswer
 from app.schemas.user import FriendAdd, FriendDelete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +24,7 @@ async def user_friends_data(
     user_info: UserProcess = Depends(get_current_user_dep),
     db_session: AsyncSession = Depends(get_db_session),
     ):
-    rjp = RedisJsonsProcess(user_info.user_id, "friends")
+    rjp = RedisJsonsProcess(user_info.user_id)
 
     return_info_friends = rjp.get_or_cache_friends(db_session, True)
 
@@ -45,7 +44,7 @@ async def processing_friend_add(
 
     login = "@" + fa.login
 
-    friend_info = await _http_client.find_user_by_param("login", param_value=login)
+    friend_info = await _http_client.find_user_by_param("login", login)
     if friend_info and isinstance(friend_info, dict):
         friend_id = friend_info.get("user_id")
 

@@ -91,7 +91,7 @@ async def get_or_cache_friends_patch(
         raise UNAUTHORIZED
     
     if write and read:
-        rjp = RedisJsonsProcess(gocf.user_id, gocf.handle)
+        rjp = RedisJsonsProcess(gocf.user_id)
         
         consume = token_info.consume_interservice_token()
         if consume:

@@ -17,7 +17,6 @@ class EmailRpcClient(PublicEmailRpcClient):
     async def send_change_email(
         self, 
         user_id_rjp: int | str,
-        handle: str,
         user_id: int | str,
         api_type: str,
         ):
@@ -32,7 +31,6 @@ class EmailRpcClient(PublicEmailRpcClient):
             "api_type": api_type,
             "rjp_data": {
                 "user_id": user_id_rjp,
-                "handle": handle
             }
         }
 

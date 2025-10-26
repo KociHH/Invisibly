@@ -15,7 +15,7 @@ from app.services.rabbitmq.client import EmailRpcClient
 from app.services.jwt import decode_jwt_token, create_token
 from datetime import timedelta
 from app.crud.user import RedisJsonsProcess
-from shared.data.redis.instance import __redis_save_jwt_code_token__
+from service_security.app.db.redis.keys import RedisUserKeys
 from app.services.http_client import _http_client
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,6 @@ async def confirm_code_data(
     
     send_code = False
 
-    rjp = RedisJsonsProcess(user_info.user_id, cause)
     user: dict = await _http_client.get_or_cache_user_info(user_info.user_id, "UserRegistered", ["email"], False)
     if user:
         email = user.get("email")
@@ -42,8 +41,8 @@ async def confirm_code_data(
         logger.error(f"Не найден email пользователя либо он сам {user_info.user_id}")
         raise HTTPException(status_code=500, detail="Server error")
     
-    redis_data: dict | None = __redis_save_jwt_code_token__.get_cached()
-    token_info = redis_data.get(rjp.name_key)
+    user_keys = RedisUserKeys(user_info.user_id)
+    token_info: dict = user_keys.jwt_confirm_token_obj.checkpoint_key.get_cached() or {}
 
     new_email: str | None = None
 
@@ -89,8 +88,7 @@ async def confirm_code_data(
                     "email": new_email,
                 }
                 token_info["used"] = True
-                redis_data[rjp.name_key] = token_info
-                __redis_save_jwt_code_token__.cached(redis_data)
+                user_keys.jwt_confirm_token_obj.checkpoint_key.cached(token_info)
             else:
                 return_data = {
                     "email": new_email,

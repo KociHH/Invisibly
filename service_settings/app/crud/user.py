@@ -7,10 +7,11 @@ from typing import Any
 from shared.crud.sql.user import UserCRUD
 from shared.crud.sql.user import EncryptEmail
 from shared.crud.redis.create import RedisJsonsUser
-from shared.data.redis.instance import __redis_save_jwt_code_token__
 from shared.config.variables import curretly_msk
 import logging
 from app.services.http_client import _http_client
+from redis import Redis
+from service_settings.app.db.redis.keys import redis_client, RedisUserKeys
 
 logger = logging.getLogger(__name__)
 
@@ -56,21 +57,20 @@ class EncryptEmailProcess(EncryptEmail):
         return db_email_hash, email_hash
 
 
-class RedisJsonsProcess(RedisJsonsUser):
-    def __init__(self, user_id: int | str, handle: str) -> None:
-        super().__init__(user_id, handle)
+class RedisJsonsProcess(RedisUserKeys):
+    def __init__(
+        self, 
+        user_id: int | str, 
+        ) -> None:
+        super().__init__(user_id)
 
-    def save_jwt_token(self, token: str, exp: int) -> dict:
+    def save_confirm_jwt_token(self, token: str, exp: int) -> dict:
         """
-        Можно сохранять либо обновлять в хранилище __redis_save_jwt_token__
-
         token: сам токен
         exp: время истечения *в минутах
         """
 
-        redis_data: dict | None = __redis_save_jwt_code_token__.get_cached()  
-        if not redis_data:
-            redis_data = {}
+        redis_data: dict | None = self.jwt_confirm_token_obj.checkpoint_key.get_cached() or {}
 
         data = {
             "token": token,
@@ -78,7 +78,7 @@ class RedisJsonsProcess(RedisJsonsUser):
         }
         expiry_time = curretly_msk() + timedelta(minutes=exp)
         data["exp"] = expiry_time.isoformat()
-        redis_data[self.name_key] = data
+        redis_data.update(data)
 
-        __redis_save_jwt_code_token__.cached(data=redis_data, ex=None)
+        self.jwt_confirm_token_obj.checkpoint_key.cached(data=redis_data, ex=None)
         return redis_data 
