@@ -2,7 +2,7 @@
 # user: Информация о пользователе в таблице UserRegistered
 services_domains_access = {
     "profile": ["user"],
-    "settings": ["jwt_confirm_token"],
+    "settings": ["jwt_confirm_token", "user"],
     "security": ["jwt_confirm_token"],
     "chat": ["chats"],
     "friends": ["friends"],

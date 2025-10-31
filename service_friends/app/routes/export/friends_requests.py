@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 import logging
 from app.schemas.data import FriendsRequestsInfo
 from shared.crud.redis.create import RedisJsonsServerToken
@@ -9,13 +9,14 @@ from app.crud.user import UserProcess
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from app.db.sql.settings import get_db_session
 from shared.services.jwt.exceptions import UNAUTHORIZED
+from typing import Annotated
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/friends_requests_info")
 async def friends_requests_info_get(
-    fri: FriendsRequestsInfo,
+    fri: Annotated[FriendsRequestsInfo, Query()],
     token_info: RedisJsonsServerToken = Depends(get_interservice_token_info),
     db_session: AsyncSession = Depends(get_db_session)
 ):

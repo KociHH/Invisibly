@@ -15,7 +15,7 @@ from app.services.rabbitmq.client import EmailRpcClient
 from app.services.jwt import decode_jwt_token, create_token
 from datetime import timedelta
 from app.crud.user import RedisJsonsProcess
-from service_security.app.db.redis.keys import RedisUserKeys
+from app.db.redis.keys import RedisUserKeys
 from app.services.http_client import _http_client
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ async def confirm_code_data(
     
     send_code = False
 
-    user: dict = await _http_client.get_or_cache_user_info(user_info.user_id, "UserRegistered", ["email"], False)
+    user: dict = await _http_client.get_or_cache_user_info(user_info.user_id, ["email"], False)
     if user:
         email = user.get("email")
 
@@ -43,12 +43,15 @@ async def confirm_code_data(
     
     user_keys = RedisUserKeys(user_info.user_id)
     token_info: dict = user_keys.jwt_confirm_token_obj.checkpoint_key.get_cached() or {}
-
     new_email: str | None = None
 
     if token_info:
         try:
             old_token = token_info.get("token")
+            if not old_token:
+                logger.error("Токен не найден в token_info")
+                raise HTTPException(status_code=404, detail="Token not found")
+            
             used: bool = token_info.get("used", False)
             old_verification_token = decode_jwt_token(old_token)
             user_id = old_verification_token.get("user_id")
@@ -59,12 +62,12 @@ async def confirm_code_data(
             code = old_verification_token.get("verification_code")
             new_email = old_verification_token.get("new_email")
             if not code or not new_email:
-                logger.error(f'Код либо new_email не найден из токена: {code}')
-                raise HTTPException(status_code=500, detail="System error")
+                logger.error(f'code либо new_email не найден из токена: {code} {new_email}')
+                raise HTTPException(status_code=500, detail="Server error")
         
         except Exception as e:
             logger.error(f"Ошибка с токеном: {e}")
-            raise HTTPException(status_code=500, detail="System error")
+            raise HTTPException(status_code=500, detail="Server error")
     else:
         logger.error("Нет jwt токена для подтверждения кода")
         raise HTTPException(status_code=404, detail="Not found jwt code token")
@@ -90,26 +93,33 @@ async def confirm_code_data(
                 token_info["used"] = True
                 user_keys.jwt_confirm_token_obj.checkpoint_key.cached(token_info)
             else:
+                life_time_repeated_code = 1
+                exp_token = token_info.get("exp")
+                exp_repeated_code = curretly_msk() + timedelta(minutes=life_time_repeated_code)
+                exp_repeated_code_iso = exp_repeated_code.isoformat()
+
                 return_data = {
                     "email": new_email,
                     "verification_token": old_token,
-                    }
+                    "exp_repeated_code_iso": exp_repeated_code_iso,
+                    "exp_token": exp_token,
+                }
                     
             send_code = False
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"Ошибка с токеном: {e}")
-            raise HTTPException(status_code=500, detail="System error")
-    # если повторная отправка
+            raise HTTPException(status_code=500, detail="Server error")
+    # повторная отправка
     if send_code:
         ep = EmailRpcClient(new_email)
         try:
-            return_data = ep.send_change_email(user_info.user_id, cause, user_info.user_id, "confirm_code")
+            return_data = await ep.send_change_email(user_info.user_id, user_info.user_id, "confirm_code")
 
         except Exception as e:
             logger.error(f"Ошибка в функции send_change_email: {e}")
-            raise HTTPException(status_code=500, detail="System error")
+            raise HTTPException(status_code=500, detail="Server error")
     
     return return_data
 
@@ -118,23 +128,27 @@ async def check_code(
     rc: SendCode, 
     user_info: UserProcess = Depends(require_existing_user_dep)
     ):
-    verification_token = decode_jwt_token(rc.token)
+    try:
+        verification_token = decode_jwt_token(rc.token)
 
-    user_id = verification_token.get("user_id")
-    if user_info.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
+        user_id = verification_token.get("user_id")
+        if user_info.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
 
-    code = verification_token.get("verification_code")
-    success = False
+        code = verification_token.get("verification_code")
+        success = False
 
-    if code == int(rc.code):
-        success = True
+        if code == int(rc.code):
+            success = True
 
-    return {
-        "success": success,
-    }
+        return {
+            "success": success,
+        }
+    except Exception as e:
+        logger.error(f"Ошибка в функции check_code: {e}")
+        raise HTTPException(status_code=500, detail="Server error")    
 
-# password
+# password not working
 @router.post("/confirm_password", response_model=SuccessMessageAnswer)
 async def processing_password(
     sp: dict,

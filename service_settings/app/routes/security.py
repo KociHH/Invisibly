@@ -34,15 +34,14 @@ async def change_email_data(
     ):
     user_id = user_info.user_id
 
-    rjp = RedisJsonsProcess(user_id)
-
-    del_token = rjp.delete_token()
-    if not del_token:
-        logger.error("Функция delete_token завершилась с ошибкой")
-        raise HTTPException(status_code=500, detail="Server error")
-
-    obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered")
+    obj: dict = await _http_client.get_or_cache_user_info(user_id)
     
+    rjp = RedisJsonsProcess(user_info.user_id)
+    token_info: dict = rjp.jwt_confirm_token_obj.checkpoint_key.get_cached() or {}
+
+    if token_info:
+        rjp.jwt_confirm_token_obj.checkpoint_key.delete_key()
+        
     email = obj.get("email")
     ee = EncryptEmailProcess(email)
     email = ee.email_part_encrypt()
@@ -59,10 +58,7 @@ async def processing_email(
     if cef.user_id != current_user_id:
         raise HTTPException(status_code=403, detail="Access denied: you can only modify your own account")
 
-    rjp = RedisJsonsProcess(current_user_id)
     ee = EncryptEmailProcess(cef.email)
-
-    token_info: dict = rjp.jwt_confirm_token_obj.checkpoint_key.get_cached() or {}
 
     db_email_hash, _ = await ee.email_verification(current_user_id)
     if db_email_hash:
@@ -71,19 +67,22 @@ async def processing_email(
             "message": "This email is busy",
         }
 
-    if token_info:
-        del_token = rjp.delete_token()
-        if not del_token:
-            logger.error("Функция delete_token завершилась с ошибкой")
-            raise HTTPException(status_code=500, detail="Server error")
-
     ep = EmailRpcClient(cef.email)
     try:
-        result = ep.send_change_email(current_user_id, "change_email", current_user_id, "change_email")
+        result = await ep.send_change_email(current_user_id, current_user_id, "change_email")
+        logger.info(f"Результат отправки email: {result}")
+        
+        if result.get("success") is False:
+            error_msg = result.get("error", "Unknown error")
+            logger.error(f"Ошибка отправки email: {error_msg}")
+            raise HTTPException(status_code=500, detail=f"Failed to send verification email: {error_msg}")
+        
         return result
             
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Ошибка в функции send_change_email: {e}")
+        logger.error(f"Ошибка в функции send_change_email: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to send verification email")       
     
 # password
@@ -115,9 +114,12 @@ async def processing_password(
                 "message": "The new password should not be the same as the old password."
             }
         else:
-            password_update = await _http_client.update_user({
-                "password": entered_password
-            })
+            password_update = await _http_client.update_user(
+                {
+                    "password": entered_password
+                },
+                current_user_id
+                )
             
             if not password_update:
                 logger.error(f"По неизвестной причине password пользователя {current_user_id} не был обновлен")

@@ -124,15 +124,17 @@ async def redis_delete_token_user(
     dtr: DeleteTokenRedis,
     user_info: UserProcess = Depends(require_existing_user_dep)
 ): 
-    rjp = RedisJsonsProcess(user_info.user_id).constructor(dtr.domain)
+    domain_map = {
+        "change_email": "jwt_confirm_token",
+        "confirm_code": "jwt_confirm_token",
+    }
+    domain = domain_map.get(dtr.domain, dtr.domain)
 
-    del_token = rjp.checkpoint_key.delete_key()
-    if not del_token:
-        logger.error(f"Функция delete_token завершилась с ошибкой: {del_token}")
-        raise HTTPException(status_code=500, detail="Server error")
+    rjp = RedisJsonsProcess(user_info.user_id).constructor(domain)
+
+    rjp.checkpoint_key.delete_key()
     
-    else:
-        return {
-            "success": True,
-            "message": "Deleted token!"
-        }
+    return {
+        "success": True,
+        "message": "Deleted token!"
+    }

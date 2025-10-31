@@ -25,11 +25,11 @@ class RedisJsonsUser(RedisUserKeyDictConstructor):
         ) -> None:
         super().__init__(user_id, domain, service, cache_call, _redis_client)
         
-        self.sql_call_key = self.create_check_sql_call_key(self)
+        self.sql_call_key = self.create_check_sql_call_key()
         
     def replace_items_data(self, items: dict[str, Any]) -> dict:
         """
-        Заменяет данные ключей где встречается параметр `cache` в ключах
+        Заменяет данные ключа где встречается параметр `cache` в названии ключа
         
         items: Параметры которые надо обновить
         
@@ -41,43 +41,41 @@ class RedisJsonsUser(RedisUserKeyDictConstructor):
 
         redis_data: dict = self.sql_call_key.get_cached() or {}
         
-        user_data_found = False
+        data_found = False
 
         if redis_data:
-            for key, old_value in redis_data.items():
-                for key_items, new_value in items.items():
-                    if key_items in key and old_value != new_value:
-                        key[key_items] = new_value
-        
-        if not user_data_found:
-            return {"error": "user data not found in cache"}
+            for key_items, new_value in items.items():
+                if key_items in redis_data and redis_data[key_items] != new_value:
+                    redis_data[key_items] = new_value
+                    data_found = True
+
+        if not data_found:
+            return {"error": "data not found in cache"}
 
         self.sql_call_key.cached(data=redis_data)
-        return {"error": "updated"}
+        return {"data": "updated"}
 
     def save_sql_call(self, data: dict, exp: int = 300) -> dict:
         """
+        Создает данные ключа где встречается параметр `cache` в названии ключа
+        
         data: дата для сохранения
+        
         exp: время истечения *в секундах
         
         return: Возвращает данные ключа, либо при ошибке `{"error": "not valid type cache in name_key"}`
         """
         if not self.sql_call_key:
-            return {"error": "not valid type cache in name_key"}
+            return {"error": f"not valid type cache in name_key: {self.name_key}"}
 
-        redis_data: dict = self.sql_call_key.get_cached() or {}
-        obj = redis_data.get(self.name_key)
-        if not obj:
-            redis_data[self.name_key] = {}
-            obj = redis_data.get(self.name_key)
+        obj: dict = self.sql_call_key.get_cached() or {}
 
         for keys, value in data.items():
             obj[keys] = value
 
         expiry_time = curretly_msk() + timedelta(seconds=exp)
         obj["exp"] = expiry_time.isoformat()
-        self.sql_call_key.cached(data=redis_data, ex=None)
-        print(data)
+        self.sql_call_key.cached(data=obj, ex=None)
         return data
 
     def redis_return_data(
@@ -107,7 +105,7 @@ class RedisJsonsServerToken:
     ) -> None:
         self.jti = jti
         self.payload: dict | None = None
-        self.__redis_save_jwt_interservice_token__ = RedisBase(self.jti, {}, redis_client=__redis_dif_key__.redis)
+        self.__redis_save_jwt_interservice_token__ = RedisBase(self.jti, {}, redis_client=redis_client)
         
     def save_interservice_token(
         self, 
@@ -131,21 +129,6 @@ class RedisJsonsServerToken:
         """
         redis_data: dict = self.__redis_save_jwt_interservice_token__.get_cached() or {}
         return redis_data if redis_data else None
-    
-    def delete_interservice_token(self) -> bool:
-        """
-        Удаляет ключ. В системе не используется, только в админке
-        """
-        try:
-            redis_data: dict = self.__redis_save_jwt_interservice_token__.get_cached()
-
-            if redis_data:
-                self.__redis_save_jwt_interservice_token__.delete_key()
-            return True
-        
-        except Exception as e:
-            logger.error(f"Внезапная ошибка: {e}")
-            return False
     
     def consume_interservice_token(self, _redis_client: Redis | None = None) -> bool:
         """ 

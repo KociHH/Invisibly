@@ -50,11 +50,13 @@ class ServiceFreeHttpClient(PublicHttpClient):
     async def update_user(
         self,
         data: dict,
+        check_user_id: str | int,
         interservice_token: str | None = None,
         user_token: str | None = None
         ) -> Any | bool: 
         """scopes: write"""
         path = "/update_user"
+        data['check_user_id'] = check_user_id
         payload = data
         if not interservice_token:
             interservice_token = self.template_create_add_interservice_token(["write"])

@@ -10,7 +10,6 @@ from jose import jwt, exceptions
 from fastapi import HTTPException
 from shared.config.variables import curretly_msk
 import logging
-from shared.data.redis.keys import __redis_save_jwt_confirm_token__
 from shared.services.tools.variables import names_services
 
 

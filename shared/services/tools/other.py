@@ -48,7 +48,7 @@ constructor_url = ConstructorUrl()
 
 
 def get_specific_url(service_name: str):
-    url = constructor_url._urls.get(service_name)
+    url = constructor_url._urls.get(service_name.upper())
     if not url:
         logger.warning(f"Юрл не найден для сервиса {service_name}: {url}")
     return url

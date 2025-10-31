@@ -10,7 +10,7 @@ from shared.crud.sql.user import UserCRUD, EncryptEmail
 from shared.config.variables import curretly_msk
 from shared.crud.redis.create import RedisJsonsUser 
 from redis import Redis
-from service_free.app.db.redis.keys import redis_client, RedisUserKeys
+from app.db.redis.keys import redis_client, RedisUserKeys
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class UserProcess(UserCRUD):
         try:
             success = await self.user_registered.update(
                 UserRegistered.user_id == self.user_id, 
-                **update_data
+                data=update_data
                 )
             return success
         except Exception as e:
@@ -191,9 +191,11 @@ class RedisJsonsProcess(RedisUserKeys):
 
             if save_sql_redis:
                 new_data = self.user_obj.save_sql_call(new_data)
-                if not new_data:
-                    logger.error("Не вернулось значение, либо ожидалось другое значение в функции save_sql_call")
+                error = new_data.get("error")
+                if error:
+                    logger.error(f"Ошибка в методе save_sql_call: {error}")
                     raise HTTPException(status_code=500, detail="Server error")
 
             obj = new_data
         return obj
+

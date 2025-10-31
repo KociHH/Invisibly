@@ -1,5 +1,7 @@
 const TIME_EXP_TOKEN = "timeExpToken"
 const TIME_EXP_REPEATED = "timeExpRepeated"
+const CHANGE_EMAIL_PENDING = "changeEmailPending"
+const GET_TOKEN_FROM_DATA = "getTokenFromData"
 
 function log_sending_to_page(
     log_msg: string, 
@@ -56,5 +58,7 @@ export {
     getUrlParams, 
     clearItemsStorage,
     TIME_EXP_REPEATED,
-    TIME_EXP_TOKEN
+    TIME_EXP_TOKEN,
+    CHANGE_EMAIL_PENDING,
+    GET_TOKEN_FROM_DATA
 }

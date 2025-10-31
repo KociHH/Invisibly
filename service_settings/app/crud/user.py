@@ -11,7 +11,7 @@ from shared.config.variables import curretly_msk
 import logging
 from app.services.http_client import _http_client
 from redis import Redis
-from service_settings.app.db.redis.keys import redis_client, RedisUserKeys
+from app.db.redis.keys import redis_client, RedisUserKeys
 
 logger = logging.getLogger(__name__)
 

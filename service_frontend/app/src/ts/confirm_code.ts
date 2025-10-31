@@ -1,4 +1,4 @@
-import { clearItemsStorage, getUrlParams, log_sending_to_page, TIME_EXP_REPEATED, TIME_EXP_TOKEN } from "./utils/other.js";
+import { clearItemsStorage, getUrlParams, log_sending_to_page, GET_TOKEN_FROM_DATA, CHANGE_EMAIL_PENDING, TIME_EXP_REPEATED, TIME_EXP_TOKEN } from "./utils/other.js";
 import { checkUpdateTokens, DeleteTokenRedis, securedApiCall } from "./utils/secured.js";
 import { change_email_api } from "./utils/user.js";
 
@@ -30,7 +30,82 @@ class ConfirmCodePage {
 
     private storageExp: Record<string, any> = getStorageExp();
 
+    private pollIntervalId: number | null = null;
+
+    private renderFrozenCountdownFromStorage(): void {
+        const expTokenStr = localStorage.getItem(TIME_EXP_TOKEN);
+        const expRepeatedStr = localStorage.getItem(TIME_EXP_REPEATED);
+        if (!expTokenStr || !expRepeatedStr) return;
+        const expMsToken = Number(expTokenStr);
+        const expMsRepeated = Number(expRepeatedStr);
+        if (!Number.isFinite(expMsToken) || !Number.isFinite(expMsRepeated)) return;
+        const now = Date.now();
+        const timeLeftToken = Math.max(0, expMsToken - now);
+        const timeLeftRepeated = Math.max(0, expMsRepeated - now);
+        this.updateCountdownUI(timeLeftToken, timeLeftRepeated);
+    }
+
+    private clearWindowInterval() {
+        if (this.pollIntervalId !== null) {
+            window.clearInterval(this.pollIntervalId);
+            this.pollIntervalId = null;
+        }
+    }
+
+    private async pollUntilResendReady(): Promise<void> {
+        this.StopUiShown();
+
+        const pollStartTime = Date.now();
+        const POLL_TIMEOUT = 10000;
+
+        const tick = async () => {
+            const elapsed = Date.now() - pollStartTime;
+            if (elapsed >= POLL_TIMEOUT) {
+                this.clearWindowInterval();
+                await this.startExpiryWatcher();
+                this.setupResendButton();
+                return;
+            }
+            // проверка на новый токен
+            try {
+                const response = await securedApiCall(`/api/security/confirm_code/data?cause=${encodeURIComponent(this.cause)}`);
+                if (response && response.ok) {
+                    const data_elem = await response.json();
+                    
+                    if (data_elem.verification_token !== localStorage.getItem(GET_TOKEN_FROM_DATA)) {
+                        console.log(`verification_token: ${data_elem.verification_token} getTokenFromData: ${localStorage.getItem(GET_TOKEN_FROM_DATA)}`)
+                        this.clearWindowInterval();
+                        this.StopUiShown();
+                        localStorage.removeItem(GET_TOKEN_FROM_DATA)
+                        clearItemsStorage([TIME_EXP_REPEATED, TIME_EXP_TOKEN, CHANGE_EMAIL_PENDING])
+                        this.isResendButtonShown = false
+                        window.location.href = `/confirm_code?cause=${encodeURIComponent("change_email")}`;
+                        return;
+                    }
+                }
+                return;
+            } catch {} // 404
+        };
+        await tick();
+        this.pollIntervalId = window.setInterval(tick, 1500);
+    }
+
+    private async startPoll(): Promise<string | null> {
+        const pending = localStorage.getItem(CHANGE_EMAIL_PENDING);
+        if (pending === "1") {
+            this.isResending = true;
+            const resendDiv = document.getElementById("repeated_code") as HTMLElement;
+            if (resendDiv && !this.isResendButtonShown) {
+                resendDiv.innerHTML = '<button class="resend_button" disabled>Отправка, подождите...</button>';
+                this.isResendButtonShown = true;
+            }
+            await this.pollUntilResendReady();
+        }
+        return pending;
+    }
+
     public async init(): Promise<void> {
+        const pending = localStorage.getItem(CHANGE_EMAIL_PENDING);
         const data = await checkUpdateTokens();
 
         let user_id;
@@ -41,6 +116,15 @@ class ConfirmCodePage {
             return;
         }
         this.user_id = user_id;
+
+        try {
+            await this.startPoll();
+        } catch {}
+
+        if (pending === "1") {
+            this.renderFrozenCountdownFromStorage();
+            return;
+        }
 
         await this.getElemDataCode();
 
@@ -72,7 +156,7 @@ class ConfirmCodePage {
     private async handleFormSubmit(e: Event): Promise<void> {
         e.preventDefault();
         
-        this.CheckUiShown();
+        this.StopUiShown();
 
         const codeInput = document.getElementById('code') as HTMLInputElement;
         const code = codeInput.value.trim();
@@ -112,33 +196,37 @@ class ConfirmCodePage {
                     await this.startExpiryWatcher();
                 }
             }
-
-        } catch (error) {
-            console.error(`Ошибка отправки: ${error}`);
-            return;
-        }
+        } catch {}
     }
 
     private async getElemDataCode(): Promise<void> {
-        const response = await securedApiCall(`/api/security/confirm_code/data?cause=${encodeURIComponent(this.cause)}`)
-        if (!response || !response.ok) {
-            console.error('Не удалось загрузить данные для подтверждения email');
+        try {
+            const response = await securedApiCall(`/api/security/confirm_code/data?cause=${encodeURIComponent(this.cause)}`)
+            if (!response || !response.ok) {
+                if (!response || (response && response.status !== 404)) {
+                    console.error('Не удалось загрузить данные для подтверждения email');
+                }
+                return;
+            }
+
+            const data_elem = await response.json();
+
+            this.newEmailData = data_elem.email
+            this.getTokenFromData = data_elem.verification_token
+            localStorage.setItem(GET_TOKEN_FROM_DATA, this.getTokenFromData || "null")
+
+            if (!this.storageExp.exp_token || !this.storageExp.exp_repeated) {
+                this.getExpRepeatedCodeData = data_elem.exp_repeated_code_iso
+                this.getExpTokenData = data_elem.exp_token
+            } 
+        } catch (error) {
+            console.error(`Ошибка при запросе данных GET: ${error}`);
             return;
         }
-
-        const data_elem = await response.json();
-
-        this.newEmailData = data_elem.email
-        this.getTokenFromData = data_elem.verification_token
-
-        if (!this.storageExp.exp_token || !this.storageExp.exp_repeated) {
-
-            this.getExpRepeatedCodeData = data_elem.exp_repeated_code_iso
-            this.getExpTokenData = data_elem.exp_token
-        } 
     }
 
     private async startExpiryWatcher(): Promise<void> {
+        if (this.expiryIntervalId !== null) return;
         const noApi = (!this.getExpRepeatedCodeData || !this.getExpTokenData);
         const noStorage = (!this.storageExp.exp_token || !this.storageExp.exp_repeated);
         if (noApi && noStorage) {
@@ -162,9 +250,9 @@ class ConfirmCodePage {
             const now = Date.now();
             const timeLeftRepeated = Math.max(0, expMsRepeated - now);
             const timeLeftToken = Math.max(0, expMsToken - now);
-            // если истек токен
+            // истек токен
             if (timeLeftToken <= 0 && !this.isExpiredUiShown) {
-                this.CheckUiShown();
+                this.StopUiShown();
                 if (!this.user_id || !this.getTokenFromData) {
                     console.warn("Не передано значение переменной user_id либо getTokenFromData");
                     return;
@@ -172,7 +260,6 @@ class ConfirmCodePage {
 
                 try {
                     const data = await DeleteTokenRedis(this.cause);
-                
                     if (data) {                        
                         window.location.href = `/${this.cause}`;
                         return;
@@ -228,9 +315,9 @@ class ConfirmCodePage {
     }
 
     private setupResendButton(): void {
+        clearItemsStorage([CHANGE_EMAIL_PENDING, TIME_EXP_REPEATED]);
         const resendDiv = document.getElementById("repeated_code") as HTMLElement;
         if (resendDiv && !this.isResendButtonShown) {
-
             resendDiv.innerHTML = '';
             const resendButton = document.createElement('button');
             resendButton.textContent = "Отправить повторно";
@@ -242,7 +329,7 @@ class ConfirmCodePage {
         }
     }
     
-    private CheckUiShown() {
+    private StopUiShown() {
         if (this.expiryIntervalId !== null) {
             clearInterval(this.expiryIntervalId);
             this.expiryIntervalId = null;
@@ -253,53 +340,46 @@ class ConfirmCodePage {
         if (this.isResending) return;
         
         this.isResending = true;
+        
+        try {
+            localStorage.setItem(CHANGE_EMAIL_PENDING, "1");
+        } catch {}
         const resendButton = document.querySelector('.resend_button') as HTMLButtonElement;
         if (resendButton) {
             resendButton.disabled = true;
             resendButton.textContent = 'Отправка, подождите...';
-            this.CheckUiShown();
+            this.StopUiShown();
         }
 
+        // отправка email и обновление токена
         try {
             const response = await securedApiCall(`/api/security/confirm_code/data?cause=${encodeURIComponent(this.cause)}&resend=${encodeURIComponent("true")}`);
-
             if (response && response.ok) {
-                clearItemsStorage([TIME_EXP_TOKEN, TIME_EXP_REPEATED]);
+                clearItemsStorage([TIME_EXP_TOKEN, TIME_EXP_REPEATED, CHANGE_EMAIL_PENDING]);
                 
                 const data = await response.json();
+                if (data.token || data.verification_token) {
+                    this.getTokenFromData = data.token || data.verification_token;
+        
+                    const expToken = new Date(data.exp_token).getTime();
+                    const expRepeated = new Date(data.exp_repeated_code_iso).getTime();
+        
+                    if (Number.isFinite(expToken)) {
+                        localStorage.setItem(TIME_EXP_TOKEN, String(expToken));
+                        this.getExpTokenData = data.exp_token;
+                    }
+                    if (Number.isFinite(expRepeated)) {
+                        localStorage.setItem(TIME_EXP_REPEATED, String(expRepeated));
+                        this.getExpRepeatedCodeData = data.exp_repeated_code_iso;
+                    }
+        
+                    this.isResendButtonShown = false;
 
-                this.getTokenFromData = data.token
-
-                const expToken = new Date(data.exp_token).getTime();
-                const expRepeated = new Date(data.exp_repeated_code_iso).getTime();
-
-                if (Number.isFinite(expToken)) {
-                    localStorage.setItem(TIME_EXP_TOKEN, String(expToken));
-                    this.getExpTokenData = data.exp_token;
+                    window.location.href = `/confirm_code?cause=${encodeURIComponent(this.cause)}`;
                 }
-
-                if (Number.isFinite(expRepeated)) {
-                    localStorage.setItem(TIME_EXP_REPEATED, String(expRepeated));
-                    this.getExpRepeatedCodeData = data.exp_repeated_code_iso;
-                }
-                
-                this.isResendButtonShown = false;
-
-                this.CheckUiShown();
-                await this.startExpiryWatcher();
                 return;
-
-            } else {
-                log_sending_to_page('Ошибка повторной отправки кода', "error");
-                return;
-            }
-        } catch (error) {
-            log_sending_to_page(`Ошибка повторной отправки: ${error}`, "error");
-            return;
-
-        } finally {
-            this.isResending = false;
-        }
+            }   
+        } catch {}
     }
 }
 

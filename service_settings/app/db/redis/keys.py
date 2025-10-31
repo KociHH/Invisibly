@@ -15,7 +15,8 @@ class RedisUserKeys:
         self.user_id = user_id
         self.service = "settings"
         
-        self.jwt_confirm_token_obj = self.constructor("jwt_confirm_token", False)        
+        self.jwt_confirm_token_obj = self.constructor("jwt_confirm_token")        
+        self.user_obj = self.constructor("user", True)
 
     def constructor(self, domain: str, cache_call: bool = False):
         return RedisJsonsUser(self.user_id, domain, self.service, cache_call, redis_client)

@@ -16,7 +16,7 @@ async function updateTokens(currentRefreshToken: string): Promise<{accessToken: 
             const errorData = await response.json();
             if (response.status === 401 && typeof errorData.detail === 'string' && errorData.detail.includes("Refresh token")) {
                 console.error("Refresh token истек. Перенаправление на страницу входа.");
-                clearTokensAndRedirectLogin();
+                // clearTokensAndRedirectLogin();
             } else {
                 console.error("Ошибка при обновлении токенов:", errorData.detail || response.statusText);
                 throw new Error(errorData.detail || `${SERVER_ERROR}`);
@@ -51,7 +51,7 @@ async function updateAccess(currentRefreshToken: string): Promise<{accessToken: 
 
     if (response.status === 401) {
         console.error("Refresh token истек при попытке получить новый Access token. Перенаправление на страницу входа.");
-        clearTokensAndRedirectLogin();
+        // clearTokensAndRedirectLogin();
         throw new Error("Refresh token expire");
     }
     if (response.status === 500 || !response.ok) {
@@ -70,7 +70,7 @@ async function securedApiCall(url_api: string, options: RequestInit = {}) {
 
     if (!refreshToken) {
         console.error("Не найден refreshToken")
-        clearTokensAndRedirectLogin();
+        // clearTokensAndRedirectLogin();
         return;
     }
 
@@ -96,13 +96,13 @@ async function securedApiCall(url_api: string, options: RequestInit = {}) {
             });
         } catch (accessError) {
             console.error("Не удалось обновить токен:", accessError);
-            clearTokensAndRedirectLogin();
+            // clearTokensAndRedirectLogin();
             return;
         }
     }
 
     if (!response.ok) {
-        clearTokensAndRedirectLogin();
+        // clearTokensAndRedirectLogin();
         console.error("API вызов завершился неудачей после попытки обновления токена.", response);
         return;
     }
@@ -132,7 +132,7 @@ async function checkUpdateTokens() {
         }
     } catch (error) {
         console.error('Ошибка проверки токенов:', error);
-        clearTokensAndRedirectLogin();
+        // clearTokensAndRedirectLogin();
         return;
     }
 }

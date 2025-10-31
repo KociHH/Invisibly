@@ -29,9 +29,9 @@ async def friend_profile_data(
 
     friend = False
 
-    user_info = await _http_client.find_user_by_param("user_id", profile_id)
+    user_info = await _http_client.free.find_user_by_param("user_id", profile_id)
     if user_info:
-        friend_info = await _http_client.find_friend_by_param("friend_id", profile_id)
+        friend_info = await _http_client.free.find_friend_by_param("friend_id", profile_id)
         
         if friend_info:
             friend = True

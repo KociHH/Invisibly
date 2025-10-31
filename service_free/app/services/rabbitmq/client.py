@@ -12,4 +12,4 @@ logger = logging.getLogger(__name__)
 
 class EmailRpcClient(PublicEmailRpcClient):
     def __init__(self, email: str, urlMQ: str = RABBITMQ_URL):
-        super().__init__(urlMQ, email)
+        super().__init__(email, urlMQ)

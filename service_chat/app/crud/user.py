@@ -3,7 +3,7 @@ from kos_Htools.redis_core import RedisBase
 from kos_Htools.sql.sql_alchemy import BaseDAO
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from service_chat.app.db.redis.keys import RedisUserKeys
+from app.db.redis.keys import RedisUserKeys
 from app.db.sql.models.personal_user import UserChat, Message, ChatParticipant
 from shared.services.tools.other import full_name_constructor
 import logging

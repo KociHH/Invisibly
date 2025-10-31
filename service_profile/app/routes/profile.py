@@ -22,8 +22,7 @@ async def user_profile_data(
     token: str = Depends(oauth2_scheme)
     ):
     user_id = user_process.user_id
-    rjp = RedisJsonsProcess(user_id)
-    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, rjp.user_obj.name_key)
+    obj: dict = await _http_client.free.get_or_cache_user_info(user_id)
 
     name = obj.get("name") or ""
     surname = obj.get("surname") or ""
@@ -44,7 +43,7 @@ async def user_edit_profile_data(
     token: str = Depends(oauth2_scheme)
     ):
     user_id = user_info.user_id
-    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, "UserRegistered")
+    obj: dict = await _http_client.free.get_or_cache_user_info(user_id)
 
     login = obj.get("login")  or ""
     if login and "@" in login:
@@ -74,8 +73,7 @@ async def processing_edit_profile(
         "login": user.login,
         "bio": user.bio
     }
-    rjp = RedisJsonsProcess(user_id)
-    obj: dict = await _http_client.free.get_or_cache_user_info(user_id, rjp.user_obj.name_key)
+    obj: dict = await _http_client.free.get_or_cache_user_info(user_id)
 
     now_data = {
         "name": obj.get("name") or "",
@@ -89,7 +87,7 @@ async def processing_edit_profile(
         old_val = now_data.get(field)
         if modified_val != old_val:
             if field == "login":
-                if await _http_client.find_user_by_param("login", modified_val):
+                if await _http_client.free.find_user_by_param("login", modified_val):
                     return {
                         "success": False,
                         "message": "Этот логин уже занят."
@@ -100,18 +98,21 @@ async def processing_edit_profile(
     success = False
 
     if update_data:
-        updated = await _http_client.update_user(update_data)
+        updated = await _http_client.free.update_user(update_data, user_id)
         
         if updated:
             logger.info(f"Профиль пользователя {user_id} был обновлен")
             message = "profile updated"
             success = True
+            rjp = RedisJsonsProcess(user_id)
 
             saved_data = rjp.user_obj.save_sql_call(
                 data=modified_data
             )
-            if not saved_data:
-                logger.warning(f"Не удалось сохранить в redis для пользователя {user_id}")
+            error = saved_data.get("error")
+            if error:
+                logger.error(f"Ошибка в методе save_sql_call: {error}")
+                raise HTTPException(status_code=500, detail="Server error")
 
     return {
         "success": success,

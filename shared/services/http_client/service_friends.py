@@ -19,7 +19,7 @@ class ServiceFriendsHttpClient(PublicHttpClient):
         user_token: str | None = None
         ) -> dict:
         """scopes: read"""
-        path = "/find_user_by_param"
+        path = "/find_friend_by_param"
         payload = {
             "param_name": param_name, 
             "param_value": param_value

@@ -2,7 +2,7 @@ from typing import Any
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from service_friends.app.db.redis.keys import RedisUserKeys
+from app.db.redis.keys import RedisUserKeys
 from app.db.sql.tables import FriendUser, SendFriendRequest
 from shared.services.tools.other import full_name_constructor
 import logging
@@ -55,7 +55,7 @@ class UserProcess(UserCRUD):
         try:
             success = await self.friend_user.update(
                 FriendUser.user_id == self.user_id, 
-                **update_data
+                data=update_data
                 )
             return success
         except Exception as e:

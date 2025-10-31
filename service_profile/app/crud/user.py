@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy import BaseDAO
 from shared.crud.sql.user import UserCRUD
-from service_profile.app.db.redis.keys import RedisUserKeys
+from app.db.redis.keys import RedisUserKeys
 import logging
 from app.services.http_client import _http_client
 

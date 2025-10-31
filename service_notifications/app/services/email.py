@@ -1,7 +1,6 @@
 from datetime import timedelta
 import uuid
 from fastapi import HTTPException
-from shared.data.redis.keys import __redis_save_sql_call__
 import logging
 import smtplib
 from email.message import EmailMessage
@@ -57,6 +56,10 @@ class EmailProcess:
         max_code = (10 ** size_code) - 1
         code = random.randint(min_code, max_code)
 
+        if not SMTP_HOST or not SMTP_EMAIL or not SMTP_PASS:
+            logger.error(f"SMTP не настроен, SMTP_HOST: {SMTP_HOST} SMTP_EMAIL: {SMTP_EMAIL} SMTP_PASS: {SMTP_PASS}")
+            return {"success": False, "error": "SMTP not configured"}
+            
         msg = EmailMessage()
         msg["From"] = SMTP_EMAIL
         msg["To"] = self.email_to
@@ -77,8 +80,8 @@ class EmailProcess:
             logger.info(f"Код подтверждения успешно отправлен на email: {self.email_to}")
             return {"success": True, "code": code, "message": "Email sent"}
         
-        except smtplib.SMTPAuthenticationError:
-            error_msg = "Ошибка аутентификации SMTP"
+        except smtplib.SMTPAuthenticationError as e:
+            error_msg = f"Ошибка аутентификации SMTP: {e}"
             logger.error(f"{error_msg} для email: {self.email_to}")
             return {"success": False, "error": error_msg}
         
@@ -117,7 +120,7 @@ class EmailProcess:
                 )
                 
         return: (
-            confirm_code: {
+            `confirm_code`: {
                 "success": True,
                 "message": "Code sent successfully.",
                 "token": verification_token,
@@ -126,18 +129,18 @@ class EmailProcess:
                 "email": self.email_to,
             }
             
-            change_email: {
+            `change_email`: {
                 "success": True,
                 "message": "Verification email sent.",
                 "send_for_verification": True
             }
             )
         """
-        result_send = self.send_code_email("для подтверждения почты.")
+        result_send = self.send_code_email("для подтверждения почты")
         logger.info(result_send)
         
         rjp = RedisJsonsProcess(user_id_rjp)
-        if result_send:
+        if result_send and result_send.get("success"):
             success = result_send.get("success")
             error = result_send.get("error")
             return_data = {}
@@ -157,19 +160,17 @@ class EmailProcess:
                     token_data, 
                     timedelta(minutes=life_time_token)
                 )
-                redis_data = rjp.jwt_confirm_token_obj.save_sql_call({verification_token}, life_time_token)
-
-                if not redis_data:
-                    logger.error(f'Не получена дата *redis_data при сохранении в redis: {redis_data}')
-                    raise HTTPException(status_code=500, detail="Date not received")
+                redis_data = rjp.save_jwt_confirm_token(
+                    verification_token,
+                    life_time_token
+                    )
 
                 if api_type == "change_email":
                     return_data["success"] = True
                     return_data["message"] = "Verification email sent."
                 
                 if api_type == "confirm_code":
-                    data_token = redis_data.get(rjp.jwt_confirm_token_obj.name_key)
-                    exp_token = data_token.get("exp")
+                    exp_token = redis_data.get("exp")
 
                     exp_repeated_code = curretly_msk() + timedelta(minutes=life_time_repeated_code)
                     exp_repeated_code_iso = exp_repeated_code.isoformat()
@@ -188,4 +189,5 @@ class EmailProcess:
                 logger.error(f"Произошла ошибка при отправке кода на почту {self.email_to}: {error}")
                 raise HTTPException(status_code=500, detail=error)
         else:
+            logger.error(f"Код не был отправлен на почту: {self.email_to}")
             raise HTTPException(status_code=500, detail="The code was not delivered")

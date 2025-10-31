@@ -8,7 +8,7 @@ from shared.services.tools.other import get_specific_url
 logger = logging.getLogger(__name__)
 
 
-class AsyncHttpClient(ServiceFreeHttpClient, ServiceFriendsHttpClient):
+class AsyncHttpClient:
     def __init__(self):
         self.free = ServiceFreeHttpClient(free_url=get_specific_url("FREE"), iss="profile")
         self.friends = ServiceFriendsHttpClient(friends_url=get_specific_url("FRIENDS"), iss="profile")

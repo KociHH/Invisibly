@@ -33,16 +33,27 @@ class PublicRpcClient:
                 raise
 
     def on_response(self, message: IncomingMessage):
-        if message.correlation_id in self.futures:
-            future = self.futures.pop(message.correlation_id)
-            future.set_result(json.loads(message.body.decode()))
+        correlation_id = message.correlation_id
+        logger.info(f"Получен ответ с correlation_id: {correlation_id} в {self.futures}")
+        
+        if correlation_id in self.futures:
+            future = self.futures[correlation_id]
+            response_data = json.loads(message.body.decode())
+            logger.info(f"Устанавливаем результат для correlation_id {correlation_id}: {response_data}")
+            future.set_result(response_data)
         else:
-            logger.warning(f"Received RPC response with unknown correlation_id: {message.correlation_id}")
+            logger.warning(f"Received RPC response with unknown correlation_id: {correlation_id} в {self.futures}")
 
     def clear_log_timeout(self, request_id: int, user_id: int | str):
-        self.futures.pop(request_id)
+        self.futures.pop(request_id, None)
         logger.error(f"RPC request to service_free for user {user_id} timed out.")
         return {"error": f"RCP request time out"}
+    
+    def cleanup_future(self, correlation_id: str):
+        """Очищает future после завершения операции"""
+        if correlation_id in self.futures:
+            del self.futures[correlation_id]
+            logger.info(f"Очищен future для correlation_id: {correlation_id}")
 
     async def close(self):
         if self.connection:
@@ -64,12 +75,13 @@ class PublicEmailRpcClient(PublicRpcClient):
         await self.connect() 
 
         correlation_id = str(uuid.uuid4())
-        furure = self.loop.create_future()
-        self.futures[correlation_id] = furure
+        future = self.loop.create_future()
+        self.futures[correlation_id] = future
 
         payload = {
             "user_id": user_id,
             "email": self.email,
+            "action": NotificationsMQ.action_send_code_email_to_user,
             "cause": cause,
             "size_code": size_code
         }
@@ -87,7 +99,11 @@ class PublicEmailRpcClient(PublicRpcClient):
             )
 
         try:
-            result = await asyncio.wait_for(furure, timeout=10)
+            result = await asyncio.wait_for(future, timeout=10)
+            logger.info(f"Получен результат для correlation_id {correlation_id}: {result}")
+            self.cleanup_future(correlation_id)
             return result
-        finally:
-            self.futures.pop(correlation_id, None)
+        except asyncio.TimeoutError:
+            logger.error(f"Timeout waiting for RabbitMQ response with correlation_id: {correlation_id}")
+            self.cleanup_future(correlation_id)
+            return {"success": False, "message": "Request timeout", "error": "Request timeout"}

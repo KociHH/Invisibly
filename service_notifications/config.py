@@ -1,10 +1,8 @@
 import os
 import logging
-from shared.services.tools.other import load_from_env
+from shared.services.tools.other import l
 
 logger = logging.getLogger(__name__)
-
-l = load_from_env
 
 POSTGRES_URL = l("POSTGRES_URL")
 

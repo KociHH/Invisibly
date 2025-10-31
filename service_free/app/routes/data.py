@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 import logging
+from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.user import RedisJsonsProcess, UserProcess
 from shared.crud.redis.dependencies import get_interservice_token_info
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("/find_user_by_param")
 async def find_user_by_param_get(
-    fubp: FindUserByParam = Depends(),
+    fubp: Annotated[FindUserByParam, Query()],
     token_info: RedisJsonsServerToken = Depends(get_interservice_token_info),
     db_session: AsyncSession = Depends(get_db_session),
 ):
@@ -36,7 +37,7 @@ async def find_user_by_param_get(
 
 @router.get("/get_user_info")
 async def get_user_info_get(
-    ufi: UserFullInfo = Depends(),
+    ufi: Annotated[UserFullInfo, Query()],
     token_info: RedisJsonsServerToken = Depends(get_interservice_token_info),
     db_session: AsyncSession = Depends(get_db_session)
 ):
@@ -47,7 +48,12 @@ async def get_user_info_get(
         raise UNAUTHORIZED
     
     if read:
-        user_process = UserProcess(ufi.user_id, db_session)
+        try:
+            uid = int(ufi.user_id) if isinstance(ufi.user_id, str) else ufi.user_id
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid user_id type")
+
+        user_process = UserProcess(uid, db_session)
         
         consume = token_info.consume_interservice_token()
         if consume:
@@ -69,11 +75,18 @@ async def update_user_patch(
         raise UNAUTHORIZED
     
     if write:
-        user_process = UserProcess(uu.user_id, db_session)
+        try:
+            uid = int(uu.check_user_id) if isinstance(uu.check_user_id, str) else uu.check_user_id
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid check_user_id type")
+
+        user_process = UserProcess(uid, db_session)
         
         consume = token_info.consume_interservice_token()
         if consume:
-            return await user_process.update_user(uu.model_dump(exclude_unset=True))
+            update_data = uu.model_dump(exclude_unset=True)
+            update_data.pop("check_user_id", None)
+            return await user_process.update_user(update_data)
         
         raise HTTPException(status_code=500, detail="Failed to consume token")
     raise HTTPException(status_code=403, detail="Not enough rights")

@@ -31,26 +31,27 @@ async def change_email_post(
         logger.error(f"Email hash не был определен для пользователя {user_info.user_id} при смене почты.")
         raise HTTPException(status_code=500, detail="Server error: Email hash not defined.")
     
-    email_update = await _http_client.update_user({
-        "email": change.new_email,
-        "email_hash": email_hash,
-    }) 
+    email_update = await _http_client.update_user(
+        {
+            "email": change.new_email,
+            "email_hash": email_hash,
+        }, 
+        user_info.user_id
+        ) 
     
     if not email_update:
         logger.error(f"По неизвестной причине email пользователя {user_info.user_id} не был обновлен")
         raise HTTPException(status_code=500, detail="Server error")
     
-    data_result = rjp.jwt_confirm_token_obj.replace_items_data(items={
+    data_result = rjp.user_obj.replace_items_data(items={
         "email": change.new_email,
         "email_hash": email_hash
     })
-    if not data_result:
-        logger.warning(f"Не удалось обновить кэш UserRegistered для пользователя {user_info.user_id}")
+    error = data_result.get("error")
+    if error:
+        logger.warning(f"Не удалось обновить кэш ключа {rjp.user_obj.name_key} для пользователя {user_info.user_id}: {error}")
     
-    delete_token = rjp.jwt_confirm_token_obj.delete_token()
-    if not delete_token:
-        logger.error(f"Функция {user_info.user_id} delete_token завершилась неудачно: {delete_token}")
-        raise HTTPException(status_code=500, detail="Server error")
+    rjp.jwt_confirm_token_obj.checkpoint_key.delete_key()
 
     logger.info(f"Email пользователя {user_info.user_id} успешно обновлен на {change.new_email}")
     return {
@@ -58,7 +59,4 @@ async def change_email_post(
         "message": "Email updated"
         }
 
-@router.post("/send/email", response_model=SendEmail)
-async def send_email():
-    pass
 

@@ -115,7 +115,7 @@ services:
         context: .
         dockerfile: service_friends/Dockerfile
       ports: 
-        - "${SERVICE_NOTIFICATIONS_PORT}:${SERVICE_NOTIFICATIONS_PORT}"
+        - "${SERVICE_FRIENDS_PORT}:${SERVICE_FRIENDS_PORT}"
       env_file:
         - ".env"
       depends_on:
@@ -133,7 +133,7 @@ services:
         context: .
         dockerfile: service_notifications/Dockerfile
       ports: 
-        - "${SERVICE_PROFILE_PORT}:${SERVICE_PROFILE_PORT}"
+        - "${SERVICE_NOTIFICATIONS_PORT}:${SERVICE_NOTIFICATIONS_PORT}"
       env_file:
         - ".env"
       depends_on:
@@ -151,7 +151,7 @@ services:
         context: .
         dockerfile: service_profile/Dockerfile
       ports: 
-        - "${SERVICE_FRIENDS_PORT}:${SERVICE_FRIENDS_PORT}"
+        - "${SERVICE_PROFILE_PORT}:${SERVICE_PROFILE_PORT}"
       env_file:
         - ".env"
       depends_on:

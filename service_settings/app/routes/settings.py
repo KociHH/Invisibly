@@ -19,7 +19,7 @@ async def user_settings_data(
     ):
     user_id = user_info.user_id
     
-    obj: dict = await _http_client.get_or_cache_user_info(user_id, "UserRegistered")
+    obj: dict = await _http_client.get_or_cache_user_info(user_id)
 
     return {
         "name": obj.get('name') or "",

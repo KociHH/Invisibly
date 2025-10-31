@@ -1,5 +1,5 @@
-import re
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, Query
 import logging
 from app.crud.user import RedisJsonsProcess
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("/find_friend_by_param")
 async def find_friend_by_param_get(
-    uf: FriendFilter = Depends(),
+    uf: Annotated[FriendFilter, Query()],
     token_info: RedisJsonsServerToken = Depends(get_interservice_token_info),
     db_session: AsyncSession = Depends(get_db_session),
 ):
@@ -36,7 +36,7 @@ async def find_friend_by_param_get(
 
 @router.get("/get_friend_info")
 async def get_friend_info_get(
-    ufi: FriendFullInfo = Depends(),
+    ufi: Annotated[FriendFullInfo, Query()],
     token_info: RedisJsonsServerToken = Depends(get_interservice_token_info),
     db_session: AsyncSession = Depends(get_db_session),
 ):
@@ -73,7 +73,8 @@ async def update_friend_patch(
         
         consume = token_info.consume_interservice_token()
         if consume:
-            return await user_process.update_friend(user_update.model_dump(exclude_unset=True))
+            user_update = user_update.model_dump(exclude_unset=True)
+            return await user_process.update_friend(user_update)
         
         raise HTTPException(status_code=500, detail="Failed to consume token")
     raise HTTPException(status_code=403, detail="Not enough rights")    

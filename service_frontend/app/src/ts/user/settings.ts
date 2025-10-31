@@ -16,10 +16,20 @@ class SettingsProcess {
         const login = document.querySelector("#user_login h4") as HTMLElement;
         const bio_content = document.querySelector("#bio_content h4") as HTMLElement;
         
-        name.textContent = data_elem.name
-        surname.textContent = data_elem.surname
-        login.textContent = data_elem.login
-        bio_content.textContent = data_elem.bio
+        name.textContent = data_elem.name || ""
+        surname.textContent = data_elem.surname || ""
+        login.textContent = data_elem.login || ""
+        bio_content.textContent = data_elem.bio || ""
+        
+        const nameLink = document.querySelector("#user_name a") as HTMLAnchorElement;
+        const surnameLink = document.querySelector("#user_surname a") as HTMLAnchorElement;
+        const loginLink = document.querySelector("#user_login a") as HTMLAnchorElement;
+        const bioLink = document.querySelector("#bio_content a") as HTMLAnchorElement;
+        
+        if (nameLink) nameLink.textContent = data_elem.name ? "изменить имя" : "добавить имя";
+        if (surnameLink) surnameLink.textContent = data_elem.surname ? "изменить фамилию" : "добавить фамилию";
+        if (loginLink) loginLink.textContent = data_elem.login ? "изменить логин" : "добавить логин";
+        if (bioLink) bioLink.textContent = data_elem.bio ? "изменить Био" : "добавить Био";
     
         const button = document.getElementById("submit_exit") as HTMLButtonElement;
         if (!button) {

@@ -34,7 +34,6 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(SlowAPIMiddleware)
 
-# app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
 app.include_router(tokens.router, prefix="/api/security")
 app.include_router(validation.router, prefix="/api/security")
 app.include_router(data.router)
