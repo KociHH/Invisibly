@@ -7,9 +7,22 @@ pass
 ## Клиентские Api
 pass
 
-> С полной документацией всех api можно ознакомиться [тут](https://github.com/KociHH/Invisibly/blob/main/README.api.md)
+> С полной документацией всех Api можно ознакомиться [тут](https://github.com/KociHH/Invisibly/blob/main/README.api.md)
 
-## Что использовалось в проекте
+## TODO
+Тесты и полная, как была задумана, реализация сервисов:
+- [ ] admin
+- [ ] celery
+- [ ] chat
+- [X] free
+- [ ] friends
+- [ ] frontend
+- [ ] notifications
+- [ ] profile
+- [ ] security
+- [ ] settings
+
+## Что используется в проекте
 ### Технологии
 | Библиотека/Технология | Реализация в проекте |
 |-----------------|----------------------------------------------------------|
