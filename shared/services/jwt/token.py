@@ -125,9 +125,9 @@ def control_rules_interservice_token(
     required_scopes: list[str] | None = None,
     ) -> Tuple[bool, bool, bool]:
     """
-    token: если не указан payload, то проверяются scopes из токена
+    token: если не указан `payload`, то проверяются `scopes` из токена
     
-    required_scopes: если не указан payload, то проверяются scopes из токена
+    required_scopes: если не указан `payload`, то проверяются `scopes` из токена
     
     return: write, delete, read
     """

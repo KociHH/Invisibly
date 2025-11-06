@@ -35,7 +35,7 @@ class UserChat(base):
 class ChatParticipant(base):
     """
     id: int
-    chat_id: int
+    chat_id: int (отношение userChats.chat_id)
     user_id: int
     """
     
@@ -58,8 +58,8 @@ class ChatParticipant(base):
 class Message(base):
     """
     message_id: int
-    chat_id: int
-    participant_id: int
+    chat_id: int (отношение userChats.chat_id)
+    participant_id: int (отношение chatParticipants.id)
     content: str
     viewed_at: datetime
     created_at: datetime

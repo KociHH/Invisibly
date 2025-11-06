@@ -78,7 +78,7 @@ class UserProcess(UserCRUD):
             return info
             
         except Exception as e:
-            logger.error(f'Ошибка в get_user_info:\n{e}')
+            logger.error(f'Ошибка в get_friend_info:\n{e}')
             return None
 
     async def friends_requests_info(

@@ -14,11 +14,11 @@ from app.db.sql.settings import get_db_session
 from app.db.sql.tables import NotificationSystem, NotificationUser
 from app.services.http_client import _http_client
 
-router = APIRouter()
+router = APIRouter(prefix="/notifications")
 logger = logging.getLogger(__name__)
 
 # friends
-@router.get("/notifications/friends/data")
+@router.get("/friends/data")
 async def notifications_friends_data(
     user_info: UserProcess = Depends(get_current_user_dep),
 ):
@@ -43,7 +43,7 @@ async def notifications_friends_data(
     return result_data
 
 # system
-@router.get("/notifications/system/data")
+@router.get("/system/data")
 async def notifications_friends_data(
     user_info: UserProcess = Depends(get_current_user_dep),
 ):

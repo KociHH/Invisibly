@@ -47,7 +47,7 @@ class RedisUserKeyDictConstructor:
             self.service = service
         else:
             logger.error(f"Сервис {service} не найден")
-            raise
+            raise ValueError(f"Unknown service: {service}")
         
         if self.check_domain(domain):
             self.domain = domain
@@ -57,7 +57,7 @@ class RedisUserKeyDictConstructor:
                 self.name_key = f"{self.user_id}:{self.domain}"
         else:
             logger.error(f"Домен {domain} сервиса {service} не найден")
-            raise
+            raise ValueError(f"Unknown domain: {domain} service: {service}")
 
         self.checkpoint_key = RedisBase(self.name_key, {}, self._redis_client)
 

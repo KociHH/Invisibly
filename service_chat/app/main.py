@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
-from app.routes import chats
+from app.routes.private import chats, chat
 from app.db.sql.settings import get_db_session
 from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
@@ -34,5 +34,5 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(SlowAPIMiddleware)
 
-# app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
 app.include_router(chats.router, prefix="/api/chat")
+app.include_router(chat.router, prefix="/api/chat")

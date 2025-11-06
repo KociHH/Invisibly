@@ -15,11 +15,11 @@ from app.db.sql.settings import get_db_session
 from app.db.sql.tables import FriendUser, SendFriendRequest
 from app.crud.user import RedisJsonsProcess, UserProcess
 
-router = APIRouter()
+router = APIRouter(prefix="/friends")
 logger = logging.getLogger(__name__)
 
 
-@router.get("/friends/data", response_model=SuccessAnswer)
+@router.get("/data", response_model=SuccessAnswer)
 async def user_friends_data(
     user_info: UserProcess = Depends(get_current_user_dep),
     db_session: AsyncSession = Depends(get_db_session),
@@ -33,7 +33,7 @@ async def user_friends_data(
         "friends": return_info_friends,
         }
 
-@router.post("/friends/add")
+@router.post("/add")
 async def processing_friend_add(
     fa: FriendAdd,
     user_info: UserProcess = Depends(get_current_user_dep),
@@ -94,7 +94,7 @@ async def processing_friend_add(
             "message": "User not found"
         }
 
-@router.post("/friends/delete")
+@router.post("/delete")
 async def processing_friend_delete(
     fd: FriendDelete,
     user_info: UserProcess = Depends(get_current_user_dep),

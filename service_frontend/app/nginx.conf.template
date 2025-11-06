@@ -146,6 +146,9 @@ server {
         /user$uri
         /user$uri.html
         /user$uri/
+        /user/chats$uri
+        /user/chats$uri.html
+        /user/chats$uri/
         /user/friends$uri
         /user/friends$uri.html
         /user/friends$uri/
