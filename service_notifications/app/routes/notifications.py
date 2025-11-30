@@ -4,6 +4,7 @@ import logging
 from sqlalchemy import and_
 from fastapi import Depends
 from app.crud.user import UserProcess, RedisJsonsProcess
+from app.services.modules.notifications.service import NotificationsService
 from shared.config.variables import path_html
 from app.crud.dependencies import get_current_user_dep, require_existing_user_dep
 from jose import jwt
@@ -14,37 +15,19 @@ from app.db.sql.settings import get_db_session
 from app.db.sql.tables import NotificationSystem, NotificationUser
 from app.services.http_client import _http_client
 
-router = APIRouter(prefix="/notifications")
+router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# friends
+notifications_service = NotificationsService()
+
 @router.get("/friends/data")
 async def notifications_friends_data(
-    user_info: UserProcess = Depends(get_current_user_dep),
+    user_process: UserProcess = Depends(get_current_user_dep),
 ):
-    friends_requests_info = await _http_client.friends.friends_requests_info(user_info.user_id, ["request_user_id", "send_at"])
+    return await notifications_service.notifications_friends_data.route(user_process)
 
-    if friends_requests_info:
-        result_data = await _http_client.friends.get_or_cache_friends(user_info.user_id, "notifications_friends")
-
-        for friend_data in friends_requests_info:
-            friend_id = friend_data[0]
-            send_at = friend_data[1]
-   
-            result_data[friend_id] = {
-                'send_at': send_at,
-            }
-
-    result_data = {
-        "success": True,
-        "friends_requests": friends_requests_info
-    }
-
-    return result_data
-
-# system
 @router.get("/system/data")
-async def notifications_friends_data(
-    user_info: UserProcess = Depends(get_current_user_dep),
+async def notifications_system_data(
+    user_process: UserProcess = Depends(get_current_user_dep),
 ):
-    pass
+    return await notifications_service.notifications_system_data.route(user_process)

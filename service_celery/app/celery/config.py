@@ -11,7 +11,7 @@ worker_prefetch_multiplier = 1
 worker_max_tasks_per_child = 1000
 worker_max_memory_per_child = 150000
 
-path_tasks = 'service_celery.app.celery.tasks.'
+path_tasks = 'service_celery.app.tasks.jwt.'
 beat_schedule = {
     'check-jwt-token-date': {
         'task': path_tasks + 'check_jwt_token_date',

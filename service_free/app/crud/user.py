@@ -6,7 +6,7 @@ from kos_Htools.sql.sql_alchemy import BaseDAO
 from app.db.sql.tables import UserRegistered
 import hashlib
 import logging
-from shared.crud.sql.user import UserCRUD, EncryptEmail
+from shared.crud.sql.user import UserCrudShared, EncryptEmailShared
 from shared.config.variables import curretly_msk
 from shared.crud.redis.create import RedisJsonsUser 
 from redis import Redis
@@ -14,10 +14,10 @@ from app.db.redis.keys import redis_client, RedisUserKeys
 
 logger = logging.getLogger(__name__)
 
-class UserProcess(UserCRUD):
+class UserProcess(UserCrudShared):
     def __init__(self, user_id: int, db_session: AsyncSession) -> None:
         super().__init__(user_id, db_session)
-        self.user_registered = BaseDAO(UserRegistered, self.db_session)
+        self.user_dao = BaseDAO(UserRegistered, self.db_session)
 
     async def get_user_info(
         self, 
@@ -25,7 +25,7 @@ class UserProcess(UserCRUD):
         w_email_hash: bool, 
         ) -> dict[str, Any] | None:
         try:    
-            user_obj = await self.user_registered.get_one(
+            user_obj = await self.user_dao.get_one(
                 UserRegistered.user_id == self.user_id)
 
             info = {
@@ -57,7 +57,7 @@ class UserProcess(UserCRUD):
             return False
         
         try:
-            success = await self.user_registered.update(
+            success = await self.user_dao.update(
                 UserRegistered.user_id == self.user_id, 
                 data=update_data
                 )
@@ -103,8 +103,16 @@ class UserProcess(UserCRUD):
             }
         return {}
 
+class UserRegisteredCrud:
+    def __init__(self, db_session: AsyncSession) -> None:
+        self.db_session = db_session
+        self.user_dao = BaseDAO(UserRegistered, self.db_session)
 
-class EncryptEmailProcess(EncryptEmail):
+    async def user_find_by_login(self, login: str):
+        user_info = await self.user_dao.get_one(UserRegistered.login == login)
+        return user_info
+
+class EncryptEmailProcess(EncryptEmailShared):
     def __init__(self, email: str,  encrypted: str | None = None) -> None:
         super().__init__(email, encrypted)
         self.email = email

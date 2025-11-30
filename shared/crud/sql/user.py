@@ -9,7 +9,7 @@ from shared.services.http_client.service_free import ServiceFreeHttpClient
 logger = logging.getLogger(__name__)
 
 
-class UserCRUD:
+class UserCrudShared:
     def __init__(self, user_id: int | str, db_session: AsyncSession) -> None:
         self.user_id = user_id
         self.db_session = db_session
@@ -24,7 +24,7 @@ class UserCRUD:
         return await http_client.get_user_info(self.user_id, False, False)
 
 
-class EncryptEmail:
+class EncryptEmailShared:
     def __init__(self, email: str, encrypted: str | None = None) -> None:
         self.email = email
         self.encrypted = encrypted

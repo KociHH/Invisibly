@@ -10,12 +10,12 @@ from app.db.sql.models.personal_user import UserChat, Message, ChatParticipant
 from shared.config.variables import curretly_msk
 from shared.services.tools.other import full_name_constructor
 import logging
-from shared.crud.sql.user import UserCRUD
+from shared.crud.sql.user import UserCrudShared
 from app.services.http_client import _http_client
 
 logger = logging.getLogger(__name__)
 
-class UserProcess(UserCRUD):
+class UserProcess(UserCrudShared):
     def __init__(self, user_id: int, db_session: AsyncSession) -> None:
         super().__init__(user_id=user_id, db_session=db_session)
 

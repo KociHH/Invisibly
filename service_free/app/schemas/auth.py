@@ -7,6 +7,7 @@ class UserLogin(BaseModel):
 
 class UserRegister(BaseModel):
     name: str
+    surname: str | None = None
     login: str
     password: str
     email: EmailStr

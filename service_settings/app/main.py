@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
-from app.routes import helper, security, settings
+from app.routes import security, settings, change
 from app.db.sql.settings import get_db_session
 from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
@@ -34,7 +34,6 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(SlowAPIMiddleware)
 
-# app.mount("/static", StaticFiles(directory="app/frontend/dist/ts"), name="static")
 app.include_router(security.router, prefix="/api/settings")
 app.include_router(settings.router, prefix="/api/settings")
-app.include_router(helper.router, prefix="/api/settings")
+app.include_router(change.router, prefix="/api/settings")

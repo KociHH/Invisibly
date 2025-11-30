@@ -3,11 +3,12 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 import logging
 import uvicorn
-from app.routes import profile, user_profile
+from app.routes import profile
 from app.db.sql.settings import get_db_session
 from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
+from service_profile.app.routes import profile_user
 from shared.services.tools.limits import limiter
 from shared.services.middleware import MiddlewareProcess
 from app.services.http_client import _http_client
@@ -35,4 +36,4 @@ async def ratelimit_handler(request: Request, exc: RateLimitExceeded):
 app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(profile.router, prefix="/api/profile")
-app.include_router(user_profile.router, prefix="/api/profile")
+app.include_router(profile_user.router, prefix="/api/profile")

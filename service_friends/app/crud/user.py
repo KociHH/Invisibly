@@ -1,17 +1,20 @@
+from datetime import datetime
 from typing import Any
+from fastapi import HTTPException, status
 from kos_Htools.sql.sql_alchemy.dao import BaseDAO
 from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.redis.keys import RedisUserKeys
 from app.db.sql.tables import FriendUser, SendFriendRequest
+from shared.config.variables import curretly_msk
 from shared.services.tools.other import full_name_constructor
 import logging
-from shared.crud.sql.user import UserCRUD
+from shared.crud.sql.user import UserCrudShared
 from app.services.http_client import _http_client
 
 logger = logging.getLogger(__name__)
 
-class UserProcess(UserCRUD):
+class UserProcess(UserCrudShared):
     def __init__(self, user_id: int, db_session: AsyncSession) -> None:
         super().__init__(user_id=user_id, db_session=db_session)
         self.friend_user = BaseDAO(FriendUser, db_session)
@@ -108,6 +111,52 @@ class UserProcess(UserCRUD):
 
         return friends_requests
 
+class UserFriendUserCrud(UserProcess):
+    def __init__(self, db_session: AsyncSession, user_id: str | int):
+        super().__init__(user_id, db_session)
+        self.friend_user_dao = BaseDAO(FriendUser, db_session)
+        
+    async def get_friend_user(self, friend_id: str | int):
+        friend = await self.friend_user_dao.get_all_column_values(
+            and_(FriendUser.user_id == self.user_id, FriendUser.friend_id == friend_id)
+        )
+        return friend
+    
+    async def delete_friend(self, friend_id: str | int):
+        delete = await self.friend_user_dao.delete(
+            and_(FriendUser.friend_id == friend_id, FriendUser.user_id == self.user_id)
+        )
+        return delete
+    
+class UserSendFriendRequestCrud(UserProcess):
+    def __init__(self, db_session: AsyncSession, user_id: str | int):
+        super().__init__(user_id, db_session)
+        self.send_friend_request_dao = BaseDAO(SendFriendRequest, db_session)
+        
+    async def get_friend_request(self, friend_id: str | int):
+        friend = await self.send_friend_request_dao.get_all_column_values(
+            and_(SendFriendRequest.request_user_id == self.user_id, SendFriendRequest.user_id == friend_id)
+        )
+        return friend
+
+    async def create_request(
+        self,
+        user_id: str | int,
+        send_at: datetime | None = None
+        ):
+        if not send_at:
+            send_at = curretly_msk()
+            
+        create = await self.send_friend_request_dao.create({
+            "request_user_id": self.user_id,
+            "user_id": user_id,
+            "send_at": send_at,
+        })   
+        if not create:
+            logger.error(f"Заявка юзера {self.user_id} не была создана в SendFriendRequest")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server error")
+        
+        return create
 
 class RedisJsonsProcess(RedisUserKeys):
     def __init__(

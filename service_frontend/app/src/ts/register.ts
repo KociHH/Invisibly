@@ -11,6 +11,7 @@ form.addEventListener('submit', async (e) => {
     const login = (document.getElementById('login') as HTMLInputElement).value;
     const password = (document.getElementById('password') as HTMLInputElement).value;
     const email = (document.getElementById('email') as HTMLInputElement).value;
+    const surname = (document.getElementById('surname') as HTMLInputElement).value;
 
     const response = await fetch('/api/free/register', {
         method: 'POST',
@@ -20,6 +21,7 @@ form.addEventListener('submit', async (e) => {
             login, 
             password, 
             email, 
+            surname,
             "is_registered": true
         }),
     });

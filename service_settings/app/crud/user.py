@@ -4,8 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from kos_Htools.sql.sql_alchemy import BaseDAO
 import hashlib
 from typing import Any
-from shared.crud.sql.user import UserCRUD
-from shared.crud.sql.user import EncryptEmail
+from shared.crud.sql.user import UserCrudShared
+from shared.crud.sql.user import EncryptEmailShared
 from shared.crud.redis.create import RedisJsonsUser
 from shared.config.variables import curretly_msk
 import logging
@@ -15,12 +15,12 @@ from app.db.redis.keys import redis_client, RedisUserKeys
 
 logger = logging.getLogger(__name__)
 
-class UserProcess(UserCRUD):
+class UserProcess(UserCrudShared):
     def __init__(self, user_id: int, db_session: AsyncSession) -> None:
         super().__init__(user_id=user_id, db_session=db_session)
 
 
-class EncryptEmailProcess(EncryptEmail):
+class EncryptEmailProcess(EncryptEmailShared):
     def __init__(self, email: str, encrypted: str | None = None) -> None:
         super().__init__(email, encrypted)
         self.email = email
@@ -63,22 +63,3 @@ class RedisJsonsProcess(RedisUserKeys):
         user_id: int | str, 
         ) -> None:
         super().__init__(user_id)
-
-    def save_confirm_jwt_token(self, token: str, exp: int) -> dict:
-        """
-        token: сам токен
-        exp: время истечения *в минутах
-        """
-
-        redis_data: dict | None = self.jwt_confirm_token_obj.checkpoint_key.get_cached() or {}
-
-        data = {
-            "token": token,
-            "used": False
-        }
-        expiry_time = curretly_msk() + timedelta(minutes=exp)
-        data["exp"] = expiry_time.isoformat()
-        redis_data.update(data)
-
-        self.jwt_confirm_token_obj.checkpoint_key.cached(data=redis_data, ex=None)
-        return redis_data 

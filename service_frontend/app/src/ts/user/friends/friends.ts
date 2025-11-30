@@ -62,7 +62,7 @@ class FriendsProcess {
                         
                         friendsHtml += `
                         <div class="friend-${friend.addition_number}" data-friend-id="${friendId}">
-                            <a href="/user/profile?id=${friendId}">${friend.full_name}</a>
+                            <a href="/profile/user?id=${friendId}">${friend.full_name}</a>
                             <form class="friend_control-form">
                                 <button data-action="delete">Удалить из друзей</button>
                             </form>
